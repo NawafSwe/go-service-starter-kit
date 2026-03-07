@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package example.v1;
+
+option go_package = "github.com/nawafswe/go-service-starter-kit/internal/app/transport/grpc/pb;pb";
+
+import "google/protobuf/timestamp.proto";
+
+// ExampleService exposes CRUD operations on the Example resource.
+service ExampleService {
+  // CreateExample creates a new example.
+  rpc CreateExample(CreateExampleRequest) returns (ExampleResponse);
+
+  // GetExample returns a single example by ID.
+  rpc GetExample(GetExampleRequest) returns (ExampleResponse);
+
+  // ListExamples returns all examples.
+  rpc ListExamples(ListExamplesRequest) returns (ListExamplesResponse);
+
+  // DeleteExample deletes an example by ID.
+  rpc DeleteExample(DeleteExampleRequest) returns (DeleteExampleResponse);
+}
+
+// ---- Request / Response messages ----
+
+message CreateExampleRequest {
+  string name = 1;
+}
+
+message GetExampleRequest {
+  string id = 1; // UUID
+}
+
+message ListExamplesRequest {}
+
+message DeleteExampleRequest {
+  string id = 1; // UUID
+}
+
+message ExampleResponse {
+  Example example = 1;
+}
+
+message ListExamplesResponse {
+  repeated Example examples = 1;
+}
+
+message DeleteExampleResponse {}
+
+// ---- Domain messages ----
+
+message Example {
+  string id         = 1; // UUID
+  string name       = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}

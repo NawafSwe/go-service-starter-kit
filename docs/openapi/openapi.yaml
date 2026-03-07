@@ -1,0 +1,237 @@
+openapi: "3.1.0"
+
+info:
+  title: go-backend-template API
+  version: "1.0.0"
+  description: |
+    Reference API for the go-backend-template.
+    Replace the `Example` resource with your own domain entities.
+
+servers:
+  - url: http://localhost:8080/app
+    description: Local development
+
+tags:
+  - name: examples
+    description: CRUD operations on the Example resource
+
+paths:
+  /api/v1/examples:
+    get:
+      summary: List examples
+      operationId: listExamples
+      tags: [examples]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Example"
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440000"
+                  name: "My first example"
+                  created_at: "2025-01-01T10:00:00Z"
+                  updated_at: "2025-01-01T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      summary: Create an example
+      operationId: createExample
+      tags: [examples]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExampleRequest"
+            example:
+              name: "My new example"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440001"
+                name: "My new example"
+                created_at: "2025-03-01T09:00:00Z"
+                updated_at: "2025-03-01T09:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/examples/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ExampleID"
+
+    get:
+      summary: Get an example by ID
+      operationId: getExample
+      tags: [examples]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                name: "My first example"
+                created_at: "2025-01-01T10:00:00Z"
+                updated_at: "2025-01-01T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: Delete an example by ID
+      operationId: deleteExample
+      tags: [examples]
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags: [system]
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            text/plain:
+              example: healthy
+        "500":
+          description: Service is unhealthy
+          content:
+            text/plain:
+              example: unhealthy upstream
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ExampleID:
+      name: id
+      in: path
+      required: true
+      description: UUID of the Example
+      schema:
+        type: string
+        format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+
+  schemas:
+    Example:
+      type: object
+      required: [id, name, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "My first example"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-01-01T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-01-01T10:00:00Z"
+
+    CreateExampleRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "My new example"
+
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            errors:
+              - title: "name is required"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          example:
+            message: "missing or malformed authorization header"
+            error: "unauthorized"
+
+    NotFound:
+      description: Not Found
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            errors:
+              - title: "not found"
+
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            errors:
+              - title: "internal server error"

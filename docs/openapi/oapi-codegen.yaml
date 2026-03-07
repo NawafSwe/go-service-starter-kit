@@ -1,0 +1,20 @@
+# oapi-codegen configuration for go-backend-template
+# Docs: https://github.com/oapi-codegen/oapi-codegen
+#
+# Generate with:
+#   make generate-contracts
+#
+# Or directly:
+#   docker run --rm -v "$(pwd):/app" -w /app hidori/oapi-codegen:latest \
+#     --config docs/openapi/oapi-codegen.yaml docs/openapi/openapi.yaml
+
+package: apicontract
+output: internal/app/transport/http/api-contract/contract.gen.go
+
+generate:
+  # Generate only the types (request/response structs).
+  # Add "chi-server", "gorilla-server", or "std-http-server" if you want
+  # server stubs generated too.
+  models: true
+  strict-server: false
+  embedded-spec: false
