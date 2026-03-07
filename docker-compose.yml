@@ -1,6 +1,4 @@
 services:
-
-  # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     environment:
@@ -12,12 +10,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # ── Database migrations ─────────────────────────────────────────────────────
   migrate:
     image: migrate/migrate:latest
     command:
@@ -30,10 +27,9 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Application (HTTP) ──────────────────────────────────────────────────────
   app-http:
     build: .
-    command: ["http"]
+    command: [ "http" ]
     ports:
       - "8080:8080"
     env_file: .env
@@ -42,12 +38,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    profiles: [app]
+    profiles: [ app ]
 
-  # ── Application (gRPC) ──────────────────────────────────────────────────────
   app-grpc:
     build: .
-    command: ["grpc"]
+    command: [ "grpc" ]
     ports:
       - "50051:50051"
     env_file: .env
@@ -56,12 +51,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    profiles: [app]
+    profiles: [ app ]
 
-  # ── Application (consumer) ──────────────────────────────────────────────────
   app-consumer:
     build: .
-    command: ["consumer"]
+    command: [ "consumer" ]
     env_file: .env
     environment:
       DB__DSN: postgres://postgres:postgres@postgres:5432/appdb?sslmode=disable
@@ -69,9 +63,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    profiles: [app]
+    profiles: [ app ]
 
-  # ── Kafka (optional — enable when building consumers) ───────────────────────
   kafka:
     image: bitnami/kafka:3.7
     environment:
@@ -84,18 +77,17 @@ services:
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
     ports:
       - "9092:9092"
-    profiles: [kafka]
+    profiles: [ kafka ]
 
-  # ── OTel Collector (optional — enable for local tracing) ────────────────────
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
-    command: ["--config=/etc/otelcol/config.yaml"]
+    command: [ "--config=/etc/otelcol/config.yaml" ]
     volumes:
       - ./docs/otel/collector-config.yaml:/etc/otelcol/config.yaml
     ports:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
-    profiles: [observability]
+    profiles: [ observability ]
 
 volumes:
   postgres_data:
