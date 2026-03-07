@@ -1,0 +1,219 @@
+asyncapi: "3.0.0"
+
+info:
+  title: go-service-starter-kit Event API
+  version: "1.0.0"
+  description: |
+    Describes the asynchronous events produced and consumed by go-service-starter-kit.
+    The service uses Kafka as the default broker; any compatible broker (RabbitMQ, NATS)
+    can be substituted by swapping the consumer implementation in
+    `internal/app/transport/consumer/consumer.go`.
+  license:
+    name: MIT
+
+servers:
+  kafka-local:
+    host: localhost:9092
+    protocol: kafka
+    description: Local Kafka broker (docker compose profile)
+  kafka-production:
+    host: "${CONSUMER__BROKERS}"
+    protocol: kafka
+    description: Production Kafka cluster — set via CONSUMER__BROKERS env variable
+
+defaultContentType: application/json
+
+channels:
+  example-created:
+    address: example.created
+    description: Published when a new Example resource is successfully created.
+    messages:
+      ExampleCreatedMessage:
+        $ref: "#/components/messages/ExampleCreated"
+
+  example-deleted:
+    address: example.deleted
+    description: Published when an Example resource is permanently deleted.
+    messages:
+      ExampleDeletedMessage:
+        $ref: "#/components/messages/ExampleDeleted"
+
+  example-commands:
+    address: example.commands
+    description: |
+      Consumed by the service to process inbound commands.
+      Messages must include an Authorization header containing a valid JWT
+      when the consumer is running with ConsumerAuthRequired middleware.
+    messages:
+      CreateExampleCommandMessage:
+        $ref: "#/components/messages/CreateExampleCommand"
+
+operations:
+  publishExampleCreated:
+    action: send
+    channel:
+      $ref: "#/channels/example-created"
+    summary: Publish an event after a new Example is created
+    tags:
+      - name: example
+      - name: publish
+
+  publishExampleDeleted:
+    action: send
+    channel:
+      $ref: "#/channels/example-deleted"
+    summary: Publish an event after an Example is deleted
+    tags:
+      - name: example
+      - name: publish
+
+  consumeExampleCommands:
+    action: receive
+    channel:
+      $ref: "#/channels/example-commands"
+    summary: Receive and process Example commands from upstream producers
+    tags:
+      - name: example
+      - name: consume
+
+components:
+  messages:
+    ExampleCreated:
+      name: ExampleCreated
+      title: Example Created
+      contentType: application/json
+      headers:
+        $ref: "#/components/schemas/MessageHeaders"
+      payload:
+        $ref: "#/components/schemas/ExampleCreatedPayload"
+      examples:
+        - name: BasicExample
+          headers:
+            correlationId: "550e8400-e29b-41d4-a716-446655440000"
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          payload:
+            event: "example.created"
+            timestamp: "2026-03-07T12:00:00Z"
+            data:
+              id: "550e8400-e29b-41d4-a716-446655440000"
+              name: "My first example"
+              created_at: "2026-03-07T12:00:00Z"
+              updated_at: "2026-03-07T12:00:00Z"
+
+    ExampleDeleted:
+      name: ExampleDeleted
+      title: Example Deleted
+      contentType: application/json
+      headers:
+        $ref: "#/components/schemas/MessageHeaders"
+      payload:
+        $ref: "#/components/schemas/ExampleDeletedPayload"
+      examples:
+        - name: BasicExample
+          headers:
+            correlationId: "661f9511-f30c-52e5-b827-557766551111"
+          payload:
+            event: "example.deleted"
+            timestamp: "2026-03-07T13:00:00Z"
+            data:
+              id: "550e8400-e29b-41d4-a716-446655440000"
+
+    CreateExampleCommand:
+      name: CreateExampleCommand
+      title: Create Example Command
+      contentType: application/json
+      headers:
+        $ref: "#/components/schemas/MessageHeaders"
+      payload:
+        $ref: "#/components/schemas/CreateExampleCommandPayload"
+      examples:
+        - name: BasicCommand
+          headers:
+            correlationId: "772g0622-g41d-63f6-c938-668877662222"
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          payload:
+            command: "example.create"
+            timestamp: "2026-03-07T11:00:00Z"
+            data:
+              name: "New example from command"
+
+  schemas:
+    MessageHeaders:
+      type: object
+      properties:
+        correlationId:
+          type: string
+          format: uuid
+          description: Unique ID for correlating requests across services and logs
+        Authorization:
+          type: string
+          description: |
+            Bearer JWT token identifying the user who triggered this event.
+            Required when the consumer runs with ConsumerAuthRequired middleware.
+          example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    ExampleCreatedPayload:
+      type: object
+      required: [event, timestamp, data]
+      properties:
+        event:
+          type: string
+          const: "example.created"
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          $ref: "#/components/schemas/Example"
+
+    ExampleDeletedPayload:
+      type: object
+      required: [event, timestamp, data]
+      properties:
+        event:
+          type: string
+          const: "example.deleted"
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
+
+    CreateExampleCommandPayload:
+      type: object
+      required: [command, timestamp, data]
+      properties:
+        command:
+          type: string
+          const: "example.create"
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          required: [name]
+          properties:
+            name:
+              type: string
+              minLength: 1
+
+    Example:
+      type: object
+      required: [id, name, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time

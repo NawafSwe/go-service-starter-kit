@@ -1,11 +1,45 @@
-bin/
-vendor/
 .env
-coverage*.out
-*.test
-*.prof
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
 
-# IDE
+# Folders
+_obj/
+_test/
+vendor/
+dist/
 .idea/
 .vscode/
-*.swp
+tmp/
+.vscode-server/
+.vscode-test/
+node_modules/
+
+# Binary files
+*.exe
+*.exe~
+*.dll
+*.dylib
+bin
+
+# Log files and crash reports
+*.log
+*.crash
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories
+Godeps/
+
+ssl
+client
+google_service_account.json
+ddagent-install.log
+logs
+.DS_Store
+
+otelcol-contrib
+otelcol
+**.log
