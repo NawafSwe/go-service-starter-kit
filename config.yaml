@@ -63,3 +63,31 @@ ENDPOINTS:
     RATE_LIMITER:
       INTERVAL: 1m
       LIMIT: 50
+
+CLIENTS:
+  HTTP:
+    JSON_EXAMPLE:
+      NAME: json-example
+      BASE_URL: https://jsonplaceholder.typicode.com
+      TIMEOUT: 10s
+      MAX_RETRIES: 3
+      RETRY_WAIT_MIN: 100ms
+      RETRY_WAIT_MAX: 2s
+      CIRCUIT_BREAKER:
+        MAX_REQUESTS: 5
+        INTERVAL: 30s
+        TIMEOUT: 60s
+        THRESHOLD: 5
+  GRPC:
+    EXAMPLE:
+      NAME: example-grpc
+      ADDRESS: localhost:50051
+      TIMEOUT: 10s
+      MAX_RETRIES: 3
+      RETRY_WAIT_MIN: 100ms
+      RETRY_WAIT_MAX: 2s
+      CIRCUIT_BREAKER:
+        MAX_REQUESTS: 5
+        INTERVAL: 30s
+        TIMEOUT: 60s
+        THRESHOLD: 5
