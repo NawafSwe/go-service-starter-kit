@@ -1,0 +1,101 @@
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: appdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Database migrations ─────────────────────────────────────────────────────
+  migrate:
+    image: migrate/migrate:latest
+    command:
+      - "-path=/migrations"
+      - "-database=postgres://postgres:postgres@postgres:5432/appdb?sslmode=disable"
+      - "up"
+    volumes:
+      - ./db/migrations:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Application (HTTP) ──────────────────────────────────────────────────────
+  app-http:
+    build: .
+    command: ["http"]
+    ports:
+      - "8080:8080"
+    env_file: .env
+    environment:
+      DB__DSN: postgres://postgres:postgres@postgres:5432/appdb?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: [app]
+
+  # ── Application (gRPC) ──────────────────────────────────────────────────────
+  app-grpc:
+    build: .
+    command: ["grpc"]
+    ports:
+      - "50051:50051"
+    env_file: .env
+    environment:
+      DB__DSN: postgres://postgres:postgres@postgres:5432/appdb?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: [app]
+
+  # ── Application (consumer) ──────────────────────────────────────────────────
+  app-consumer:
+    build: .
+    command: ["consumer"]
+    env_file: .env
+    environment:
+      DB__DSN: postgres://postgres:postgres@postgres:5432/appdb?sslmode=disable
+      CONSUMER__BROKERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: [app]
+
+  # ── Kafka (optional — enable when building consumers) ───────────────────────
+  kafka:
+    image: bitnami/kafka:3.7
+    environment:
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    ports:
+      - "9092:9092"
+    profiles: [kafka]
+
+  # ── OTel Collector (optional — enable for local tracing) ────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./docs/otel/collector-config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    profiles: [observability]
+
+volumes:
+  postgres_data:

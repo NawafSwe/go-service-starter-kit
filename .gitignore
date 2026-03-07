@@ -1,0 +1,11 @@
+bin/
+vendor/
+.env
+coverage*.out
+*.test
+*.prof
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,39 @@
+FROM golang:1.23-alpine AS builder
+
+RUN apk update && apk add --no-cache git make ca-certificates
+
+RUN addgroup -g 1001 builder && \
+    adduser -u 1001 -s /bin/sh -D -G builder builder
+
+USER builder:builder
+ENV APP_HOME /home/builder
+WORKDIR $APP_HOME
+
+COPY --chown=builder:builder . $APP_HOME/
+
+RUN go build -o ./bin/app ./cmd/main.go
+
+#################################
+# FINAL STAGE
+#################################
+FROM alpine:latest AS runner
+
+ENV APP_HOME /home/runner/bin
+
+RUN apk update && apk add --no-cache ca-certificates && \
+    addgroup -g 1001 runner && \
+    adduser -u 1001 -s /bin/sh -D -G runner runner && \
+    mkdir -p $APP_HOME && \
+    chown -R runner:runner $APP_HOME
+
+USER runner:runner
+WORKDIR $APP_HOME
+
+COPY --chown=runner:runner --from=builder /home/builder/bin/ .
+COPY --chown=runner:runner --from=builder /home/builder/config.yaml .
+COPY --chown=runner:runner --from=migrate/migrate:latest /usr/local/bin/migrate .
+COPY --chown=runner:runner --from=builder /home/builder/db/migrations ./migrations
+
+# Override the default process by passing an argument: http | grpc | consumer | <job-name>
+ENTRYPOINT ["/home/runner/bin/app"]
+CMD ["http"]
