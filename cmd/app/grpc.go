@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	grpcserver "github.com/nawafswe/go-service-starter-kit/internal/app/transport/grpc"
+	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/grpc/bootstrap"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/clients/db/postgres"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/tracing"
@@ -28,13 +29,20 @@ func (g GRPCServerProcess) Register(args ProcessArgs) (Process, error) {
 		return nil, err
 	}
 
+	resources := bootstrap.SharedResource{
+		Lgr:    lgr,
+		Tracer: tp.Tracer(worker.GRPCWorkerName),
+	}
+
 	dbConn, err := postgres.NewConn(ctx, cfg.DB, fmt.Sprintf("%s.grpc.db", config.ServiceName), tp)
 	if err != nil {
 		lgr.Error(ctx, err, "[FATAL] failed to connect to database")
 		return nil, err
 	}
 
-	srv, err := grpcserver.NewGRPCServer(ctx, cfg, dbConn, lgr)
+	deps := bootstrap.Dependencies{DBConn: dbConn}
+
+	srv, err := grpcserver.NewGRPCServer(ctx, cfg, &deps, &resources)
 	if err != nil {
 		lgr.Error(ctx, err, "[FATAL] failed to build gRPC server")
 		return nil, err
@@ -46,5 +54,6 @@ func (g GRPCServerProcess) Register(args ProcessArgs) (Process, error) {
 		lgr.Error(ctx, err, "[FATAL] failed to create gRPC worker")
 		return nil, err
 	}
+	grpcWorker.WithAddr(fmt.Sprintf(":%d", cfg.GRPC.Port))
 	return withShutdown(grpcWorker, shutdown), nil
 }

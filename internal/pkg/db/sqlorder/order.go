@@ -15,7 +15,7 @@ type OrderBy struct {
 }
 
 // SQL returns a safe, validated ORDER BY fragment (e.g. "created_at DESC").
-// The column is sanitised — only lowercase letters, digits, and underscores are
+// The column is sanitized — only lowercase letters, digits, and underscores are
 // allowed; any invalid value falls back to "created_at DESC".
 func (o OrderBy) SQL() string {
 	col := sanitizeColumn(o.Column)
