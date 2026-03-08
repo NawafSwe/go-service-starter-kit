@@ -9,13 +9,12 @@ import (
 	"testing"
 	"time"
 
-	corehttp "github.com/nawafswe/mockchaos/core/http"
-	"github.com/nawafswe/mockchaos/grpctest"
-	"github.com/nawafswe/mockchaos/httptest"
-
 	httpserver "github.com/nawafswe/go-service-starter-kit/internal/app/transport/http"
 	httpbootstrap "github.com/nawafswe/go-service-starter-kit/internal/app/transport/http/bootstrap"
 	"github.com/nawafswe/go-service-starter-kit/internal/auth"
+	corehttp "github.com/nawafswe/mockchaos/core/http"
+	"github.com/nawafswe/mockchaos/grpctest"
+	"github.com/nawafswe/mockchaos/httptest"
 	"google.golang.org/grpc"
 )
 

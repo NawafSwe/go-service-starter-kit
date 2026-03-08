@@ -2,6 +2,9 @@ package suite
 
 import (
 	"context"
+	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -33,7 +36,12 @@ type Repositories struct {
 func SetupTestSuite(t *testing.T, opts ...Option) *Suite {
 	t.Helper()
 
-	cfg, err := config.Load("../../../config.yaml", "../../../test/.env.integration")
+	root, err := findProjectRoot()
+	if err != nil {
+		t.Fatalf("suite: find project root: %v", err)
+	}
+
+	cfg, err := config.Load(filepath.Join(root, "config.yaml"), filepath.Join(root, "test", ".env.integration"))
 	if err != nil {
 		t.Fatalf("suite: load config: %v", err)
 	}
@@ -64,4 +72,27 @@ func SetupTestSuite(t *testing.T, opts ...Option) *Suite {
 	}
 
 	return s
+}
+
+// findProjectRoot walks upward from the working directory looking for go.mod
+// (the project root marker). This avoids brittle hardcoded relative paths that
+// break when tests run from different package directories.
+func findProjectRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	const maxDepth = 10
+	for range maxDepth {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return "", errors.New("project root (go.mod) not found")
 }
