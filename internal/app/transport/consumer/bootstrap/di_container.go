@@ -4,7 +4,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/jmoiron/sqlx"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/repositories/example"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/logger"
+	"github.com/nawafswe/go-service-starter-kit/internal/observability/logger"
 )
 
 type (

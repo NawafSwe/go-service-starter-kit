@@ -5,10 +5,10 @@ import (
 
 	grpcserver "github.com/nawafswe/go-service-starter-kit/internal/app/transport/grpc"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/grpc/bootstrap"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/clients/db/postgres"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/tracing"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/worker"
+	"github.com/nawafswe/go-service-starter-kit/internal/clients/db/postgres"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/observability/tracing"
+	"github.com/nawafswe/go-service-starter-kit/internal/worker"
 )
 
 // GRPCServerProcess wires up and starts the gRPC server.

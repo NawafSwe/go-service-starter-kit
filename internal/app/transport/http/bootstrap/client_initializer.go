@@ -2,7 +2,7 @@ package bootstrap
 
 import (
 	"github.com/jmoiron/sqlx"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
 )
 
 // InitializeClients initialises all external client connections and returns them

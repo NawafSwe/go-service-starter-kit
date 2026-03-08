@@ -3,7 +3,7 @@ package bootstrap
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/repositories/example"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/logger"
+	"github.com/nawafswe/go-service-starter-kit/internal/observability/logger"
 	"go.opentelemetry.io/otel/trace"
 )
 

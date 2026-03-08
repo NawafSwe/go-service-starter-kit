@@ -16,10 +16,10 @@ import (
 	"fmt"
 
 	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/consumer/bootstrap"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/auth"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/middleware"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/logger"
+	"github.com/nawafswe/go-service-starter-kit/internal/auth"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/middleware"
+	"github.com/nawafswe/go-service-starter-kit/internal/observability/logger"
 )
 
 // Consumer implements worker.MessageConsumer by routing decoded messages

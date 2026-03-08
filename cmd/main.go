@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/nawafswe/go-service-starter-kit/cmd/app"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/logger"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/observability/logger"
 	"go.opentelemetry.io/otel"
 	otelmeter "go.opentelemetry.io/otel/metric"
 )

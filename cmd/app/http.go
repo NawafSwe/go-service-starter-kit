@@ -5,10 +5,10 @@ import (
 
 	httpserver "github.com/nawafswe/go-service-starter-kit/internal/app/transport/http"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/http/bootstrap"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/clients/db/postgres"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/tracing"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/worker"
+	"github.com/nawafswe/go-service-starter-kit/internal/clients/db/postgres"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/observability/tracing"
+	"github.com/nawafswe/go-service-starter-kit/internal/worker"
 )
 
 // HTTPServerProcess wires up and starts the HTTP server.

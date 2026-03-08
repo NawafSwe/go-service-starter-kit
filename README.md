@@ -26,7 +26,7 @@ This template distils patterns and lessons from multiple production Go services.
 - Enforces a **clean-layered architecture** — domain → business → endpoint → transport — so your code stays testable as it grows
 - Provides **JWT authentication** baked in for HTTP, gRPC, and message consumers out of the box
 - Wires **OpenTelemetry** tracing, structured logging, and metrics from day one, so observability is never an afterthought
-- Keeps infrastructure concerns in `internal/pkg/` and your domain in `internal/app/`, making the boundary between _your code_ and _plumbing_ explicit
+- Keeps infrastructure concerns in `internal/` and your domain in `internal/app/`, making the boundary between _your code_ and _plumbing_ explicit
 
 > The template is intentionally opinionated. It picks go-kit, gorilla/mux, sqlx, zerolog, and viper — a stack that has been proven at scale. You are free to swap any layer out.
 
@@ -53,41 +53,40 @@ go-service-starter-kit/
 │       └── gen/              # Generated Go stubs (pb.go + grpc.pb.go)
 │
 ├── internal/
-│   ├── pkg/                  # Shared infrastructure — reuse across any domain
-│   │   ├── auth/             # JWT (ClaimsParser) + bcrypt password hashing
-│   │   ├── clients/
-│   │   │   └── db/
-│   │   │       ├── postgres/ # OTel-traced PostgreSQL pool (sqlx + lib/pq)
-│   │   │       ├── mysql/    # OTel-traced MySQL pool (sqlx + go-sql-driver)
-│   │   │       └── mongodb/  # OTel-traced MongoDB client (mongo-driver)
-│   │   ├── config/           # Viper loader — YAML + .env + env vars
-│   │   ├── db/               # Database-agnostic pagination (Page, PageResult)
-│   │   │   └── sqlorder/     # SQL ORDER BY builder with column sanitisation
-│   │   ├── gokit/
-│   │   │   ├── http/         # go-kit HTTP handler factory
-│   │   │   ├── grpc/         # go-kit gRPC handler factory
-│   │   │   └── consumer/     # go-kit endpoint wrapper for message consumers
-│   │   ├── httperrors/       # Reusable HTTP error types (400, 401, 403, 404, 409, 500)
-│   │   ├── httpx/            # Resilient HTTP client (retry, circuit breaker, OTel)
-│   │   │   └── mock/         # MockDoer for unit tests
-│   │   ├── grpcx/            # Resilient gRPC client (retry, circuit breaker, OTel)
-│   │   │   └── mock/         # MockInvoker for unit tests
-│   │   ├── middleware/
-│   │   │   ├── http.go       # JWT HTTP middleware (AuthRequired / AuthOptional / AuthMock)
-│   │   │   ├── grpc.go       # JWT gRPC interceptors + logging + tracing interceptors
-│   │   │   ├── consumer.go   # JWT consumer middleware (works with any message broker)
-│   │   │   ├── gokit.go      # Timeout + sliding-window rate limiter (go-kit)
-│   │   │   └── logging.go    # Transport-aware logging with sensitive-field masking
-│   │   ├── observability/
-│   │   │   ├── logger/       # zerolog-backed structured, context-aware logger
-│   │   │   ├── tracing/      # OTel trace provider (OTLP gRPC exporter)
-│   │   │   └── metric/       # OTel metric Reporter
-│   │   ├── text/             # NonLoggable — redacts sensitive strings from logs and JSON
-│   │   └── worker/
-│   │       ├── http.go       # HTTP worker — graceful shutdown on SIGINT/SIGTERM
-│   │       ├── grpc.go       # gRPC worker — graceful shutdown
-│   │       ├── consumer.go   # Consumer worker — graceful shutdown
-│   │       └── mock/         # MockMessageConsumer for unit tests
+│   ├── auth/                 # JWT (ClaimsParser) + bcrypt password hashing
+│   ├── clients/
+│   │   └── db/
+│   │       ├── postgres/     # OTel-traced PostgreSQL pool (sqlx + lib/pq)
+│   │       ├── mysql/        # OTel-traced MySQL pool (sqlx + go-sql-driver)
+│   │       └── mongodb/      # OTel-traced MongoDB client (mongo-driver)
+│   ├── config/               # Viper loader — YAML + .env + env vars
+│   ├── db/                   # Database-agnostic pagination (Page, PageResult)
+│   │   └── sqlorder/         # SQL ORDER BY builder with column sanitisation
+│   ├── gokit/
+│   │   ├── http/             # go-kit HTTP handler factory
+│   │   ├── grpc/             # go-kit gRPC handler factory
+│   │   └── consumer/         # go-kit endpoint wrapper for message consumers
+│   ├── httperrors/           # Reusable HTTP error types (400, 401, 403, 404, 409, 500)
+│   ├── httpx/                # Resilient HTTP client (retry, circuit breaker, OTel)
+│   │   └── mock/             # MockDoer for unit tests
+│   ├── grpcx/                # Resilient gRPC client (retry, circuit breaker, OTel)
+│   │   └── mock/             # MockInvoker for unit tests
+│   ├── middleware/
+│   │   ├── http.go           # JWT HTTP middleware (AuthRequired / AuthOptional / AuthMock)
+│   │   ├── grpc.go           # JWT gRPC interceptors + logging + tracing interceptors
+│   │   ├── consumer.go       # JWT consumer middleware (works with any message broker)
+│   │   ├── gokit.go          # Timeout + sliding-window rate limiter (go-kit)
+│   │   └── logging.go        # Transport-aware logging with sensitive-field masking
+│   ├── observability/
+│   │   ├── logger/           # zerolog-backed structured, context-aware logger
+│   │   ├── tracing/          # OTel trace provider (OTLP gRPC exporter)
+│   │   └── metric/           # OTel metric Reporter
+│   ├── text/                 # NonLoggable — redacts sensitive strings from logs and JSON
+│   ├── worker/
+│   │   ├── http.go           # HTTP worker — graceful shutdown on SIGINT/SIGTERM
+│   │   ├── grpc.go           # gRPC worker — graceful shutdown
+│   │   ├── consumer.go       # Consumer worker — graceful shutdown
+│   │   └── mock/             # MockMessageConsumer for unit tests
 │   │
 │   └── app/                  # Your domain code lives here
 │       ├── domain/           # Entities + sentinel errors
@@ -274,7 +273,7 @@ Combine profiles as needed: `docker compose --profile app --profile kafka --prof
 
 ### Rename the domain
 
-Replace `internal/app/` with your service name (e.g. `internal/orders/`) and update the import paths. The `internal/pkg/` packages stay unchanged.
+Replace `internal/app/` with your service name (e.g. `internal/orders/`) and update the import paths. The shared infrastructure packages under `internal/` stay unchanged.
 
 ### Add a new use case
 
@@ -366,7 +365,7 @@ user := auth.UserFromCtx(ctx)
 
 ## Resilient clients
 
-`internal/pkg/httpx` and `internal/pkg/grpcx` wrap every outbound call with:
+`internal/httpx` and `internal/grpcx` wrap every outbound call with:
 
 - **Retries with exponential back-off + jitter** — avoids thundering herd on transient errors
 - **Circuit breaker** (sony/gobreaker) — opens automatically after N consecutive failures, giving downstream services time to recover
@@ -495,7 +494,7 @@ Tests are organized around the layer they cover:
 | **Endpoint** | Middleware behaviour — timeout fires, rate limit triggers, auth rejects | Unit test by calling the endpoint directly |
 | **Transport** | Encode/decode — valid body accepted, bad body rejected with 400 | Unit test using `httptest.NewRecorder` |
 
-`internal/pkg/` packages ship with their own unit and integration tests.
+`internal/` infrastructure packages ship with their own unit and integration tests.
 
 **Test conventions:**
 - One `_test.go` file per source file (e.g. `jwt_test.go` for `jwt.go`)

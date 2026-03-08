@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/logger"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/observability/logger"
 	otelmeter "go.opentelemetry.io/otel/metric"
 )
 

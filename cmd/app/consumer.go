@@ -5,10 +5,10 @@ import (
 
 	consumerapp "github.com/nawafswe/go-service-starter-kit/internal/app/transport/consumer"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/consumer/bootstrap"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/clients/db/postgres"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/tracing"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/worker"
+	"github.com/nawafswe/go-service-starter-kit/internal/clients/db/postgres"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/observability/tracing"
+	"github.com/nawafswe/go-service-starter-kit/internal/worker"
 )
 
 // ConsumerProcess wires up and starts the message consumer.

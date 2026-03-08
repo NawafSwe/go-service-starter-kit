@@ -4,9 +4,9 @@ import (
 	"github.com/nawafswe/go-service-starter-kit/internal/app/business/example"
 	ep "github.com/nawafswe/go-service-starter-kit/internal/app/endpoint/v1"
 	v1 "github.com/nawafswe/go-service-starter-kit/internal/app/transport/consumer/v1"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	kitconsumer "github.com/nawafswe/go-service-starter-kit/internal/pkg/gokit/consumer"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/middleware"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	kitconsumer "github.com/nawafswe/go-service-starter-kit/internal/gokit/consumer"
+	"github.com/nawafswe/go-service-starter-kit/internal/middleware"
 )
 
 // InitializeRouter wires up the message router — one entry per consumed message type.

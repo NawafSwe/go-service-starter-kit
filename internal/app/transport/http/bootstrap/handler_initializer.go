@@ -7,10 +7,10 @@ import (
 	ep "github.com/nawafswe/go-service-starter-kit/internal/app/endpoint/v1"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/http/encoder"
 	v1 "github.com/nawafswe/go-service-starter-kit/internal/app/transport/http/v1"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	kithttp "github.com/nawafswe/go-service-starter-kit/internal/pkg/gokit/http"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/middleware"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/logger"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	kithttp "github.com/nawafswe/go-service-starter-kit/internal/gokit/http"
+	"github.com/nawafswe/go-service-starter-kit/internal/middleware"
+	"github.com/nawafswe/go-service-starter-kit/internal/observability/logger"
 )
 
 func initializeCreateExampleHandler(

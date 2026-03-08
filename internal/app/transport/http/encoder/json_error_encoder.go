@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/jsonapi"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/domain"
-	transporterrors "github.com/nawafswe/go-service-starter-kit/internal/pkg/httperrors"
+	transporterrors "github.com/nawafswe/go-service-starter-kit/internal/httperrors"
 )
 
 const (

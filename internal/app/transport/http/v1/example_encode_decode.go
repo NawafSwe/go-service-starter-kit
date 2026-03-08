@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/business/example"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/domain"
-	transporterrors "github.com/nawafswe/go-service-starter-kit/internal/pkg/httperrors"
+	transporterrors "github.com/nawafswe/go-service-starter-kit/internal/httperrors"
 )
 
 // exampleJSON is the wire representation of a domain.Example.

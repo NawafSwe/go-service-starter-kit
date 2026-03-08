@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/http/bootstrap"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
 )
 
 // NewHTTPServer builds the HTTP server — initialises repositories, wires routes,

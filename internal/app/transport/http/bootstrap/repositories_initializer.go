@@ -2,7 +2,7 @@ package bootstrap
 
 import (
 	"github.com/nawafswe/go-service-starter-kit/internal/app/repositories/example"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
 )
 
 // InitializeRepositories wires up and returns the shared repository instances.

@@ -17,9 +17,9 @@ import (
 
 	grpcv1 "github.com/nawafswe/go-service-starter-kit/api/proto/grpc/v1/gen"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/grpc/bootstrap"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/auth"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/middleware"
+	"github.com/nawafswe/go-service-starter-kit/internal/auth"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

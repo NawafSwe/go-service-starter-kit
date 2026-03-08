@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/auth"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/middleware"
+	"github.com/nawafswe/go-service-starter-kit/internal/auth"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	"github.com/nawafswe/go-service-starter-kit/internal/middleware"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 

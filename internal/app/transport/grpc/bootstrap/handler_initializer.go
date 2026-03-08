@@ -5,9 +5,9 @@ import (
 	"github.com/nawafswe/go-service-starter-kit/internal/app/business/example"
 	ep "github.com/nawafswe/go-service-starter-kit/internal/app/endpoint/v1"
 	v1 "github.com/nawafswe/go-service-starter-kit/internal/app/transport/grpc/v1"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
-	kitgrpc "github.com/nawafswe/go-service-starter-kit/internal/pkg/gokit/grpc"
-	"github.com/nawafswe/go-service-starter-kit/internal/pkg/middleware"
+	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	kitgrpc "github.com/nawafswe/go-service-starter-kit/internal/gokit/grpc"
+	"github.com/nawafswe/go-service-starter-kit/internal/middleware"
 )
 
 func initializeCreateExampleHandler(
