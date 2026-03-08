@@ -4,7 +4,7 @@
 // - protoc             v3.20.3
 // source: example.proto
 
-package pb
+package grpcv1
 
 import (
 	context "context"

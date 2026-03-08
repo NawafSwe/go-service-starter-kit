@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package example.v1;
 
-option go_package = "github.com/nawafswe/go-service-starter-kit/internal/app/transport/grpc/pb;pb";
+option go_package = "github.com/nawafswe/go-service-starter-kit/api/proto/grpc/v1/gen;grpcv1";
 
 import "google/protobuf/timestamp.proto";
 
