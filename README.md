@@ -20,7 +20,7 @@
 
 Most Go service templates stop at "here is how to start an HTTP server." Real production services are more complex: they run **background jobs**, consume **Kafka or RabbitMQ messages**, expose **gRPC endpoints** for internal traffic, and handle **one-off data migrations** — all sharing the same business logic and infrastructure.
 
-This template was extracted from a real production service. The goal is to give you a solid, opinionated starting point that:
+This template distils patterns and lessons from multiple production Go services. Rather than reflecting a single codebase, it combines the architectural decisions that proved scalable across different domains and team sizes into one reusable starting point that:
 
 - Ships **all process types** (HTTP, gRPC, consumer, jobs) from a **single binary**, selected at runtime
 - Enforces a **clean-layered architecture** — domain → business → endpoint → transport — so your code stays testable as it grows
