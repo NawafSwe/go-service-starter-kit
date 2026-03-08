@@ -428,23 +428,23 @@ CLIENTS:
 ### Usage
 
 ```go
-// HTTP client
+// HTTP client — meter and tracer are optional
 httpClient, err := httpx.New(
     cfg.Clients.HTTP["JSON_EXAMPLE"],
     &http.Client{Timeout: cfg.Clients.HTTP["JSON_EXAMPLE"].Timeout},
-    otelMeter,
-    otelTracerProvider,
+    httpx.WithMeter(otelMeter),               // optional
+    httpx.WithTracerProvider(otelTracerProvider), // optional
 )
 req, _ := http.NewRequest(http.MethodGet, cfg.Clients.HTTP["JSON_EXAMPLE"].BaseURL+"/posts/1", nil)
 resp, err := httpClient.Do(ctx, req)
 
-// gRPC client
+// gRPC client — meter and tracer are optional
 grpcConn, _ := grpc.NewClient(cfg.Clients.GRPC["EXAMPLE"].Address)
 grpcClient, err := grpcx.New(
     cfg.Clients.GRPC["EXAMPLE"],
     grpcConn,
-    otelMeter,
-    otelTracerProvider,
+    grpcx.WithMeter(otelMeter),               // optional
+    grpcx.WithTracerProvider(otelTracerProvider), // optional
 )
 var reply pb.ExampleResponse
 err = grpcClient.Invoke(ctx, "/example.v1.ExampleService/GetExample", &req, &reply)
