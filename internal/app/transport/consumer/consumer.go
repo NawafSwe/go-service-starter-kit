@@ -16,7 +16,6 @@ import (
 	"fmt"
 
 	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/consumer/bootstrap"
-	v1 "github.com/nawafswe/go-service-starter-kit/internal/app/transport/consumer/v1"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/auth"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/middleware"
@@ -28,7 +27,7 @@ import (
 type Consumer struct {
 	cfg            config.Config
 	lgr            logger.Logger
-	endpoints      *bootstrap.MessageEndpoints
+	router         bootstrap.MessageRouter
 	authMiddleware func(ctx context.Context, token string) (context.Context, error)
 }
 
@@ -44,7 +43,7 @@ func NewConsumer(
 		return nil, fmt.Errorf("consumer: failed to initialize repositories: %w", err)
 	}
 
-	endpoints := bootstrap.InitializeEndpoints(cfg, repos)
+	router := bootstrap.InitializeRouter(cfg, repos)
 
 	claimsParser, err := auth.NewClaimsParser(cfg.JWT.ISSUER, []byte(cfg.JWT.Secret))
 	if err != nil {
@@ -52,9 +51,9 @@ func NewConsumer(
 	}
 
 	return &Consumer{
-		cfg:       cfg,
-		lgr:       resources.Lgr,
-		endpoints: endpoints,
+		cfg:    cfg,
+		lgr:    resources.Lgr,
+		router: router,
 		// Use ConsumerAuthRequired when your messages always carry a user token.
 		// Use ConsumerAuthOptional when the token is optional.
 		// Use ConsumerAuthMock for local development when auth.mock is enabled.
@@ -84,7 +83,7 @@ func (c *Consumer) Start(ctx context.Context) error {
 	//           if errors.Is(err, context.Canceled) { return nil }
 	//           return fmt.Errorf("consumer: read message: %w", err)
 	//       }
-	//       if err := c.handleMessage(ctx, msg.Headers["Authorization"], msg.Value); err != nil {
+	//       if err := c.handleMessage(ctx, "example.create", msg.Headers["Authorization"], msg.Value); err != nil {
 	//           c.lgr.Error(ctx, err, "failed to handle message")
 	//       }
 	//   }
@@ -107,20 +106,22 @@ func (c *Consumer) handleMessage(ctx context.Context, msgType string, token stri
 		return fmt.Errorf("consumer: auth failed: %w", err)
 	}
 
-	// Step 2: route to the appropriate endpoint based on message type.
-	switch msgType {
-	case "example.create":
-		req, err := v1.DecodeCreateExampleCommand(payload)
-		if err != nil {
-			return err
-		}
-		_, err = c.endpoints.CreateExample(ctx, req)
-		return err
-
-	default:
-		c.lgr.InfoFields(ctx, "unknown message type", map[string]any{"type": msgType})
+	// Step 2: look up the handler by message type.
+	handler, ok := c.router[msgType]
+	if !ok {
+		c.lgr.InfoW(ctx, "unknown message type", map[string]any{"type": msgType})
 		return nil
 	}
+
+	// Step 3: decode the transport payload → business request.
+	req, err := handler.Decode(payload)
+	if err != nil {
+		return err
+	}
+
+	// Step 4: call the go-kit endpoint (timeout, rate-limit, logging applied).
+	_, err = handler.Endpoint(ctx, req)
+	return err
 }
 
 // chooseAuthMiddleware selects the right JWT middleware based on config.

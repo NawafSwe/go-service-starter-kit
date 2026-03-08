@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
+	grpcv1 "github.com/nawafswe/go-service-starter-kit/api/proto/grpc/v1/gen"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/business/example"
 	"github.com/nawafswe/go-service-starter-kit/internal/app/domain"
-	grpcv1 "github.com/nawafswe/go-service-starter-kit/api/proto/grpc/v1/gen"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // ---- Encode helpers ----

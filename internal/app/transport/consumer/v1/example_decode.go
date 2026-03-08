@@ -7,8 +7,9 @@ import (
 	"github.com/nawafswe/go-service-starter-kit/internal/app/business/example"
 )
 
-// createExampleCommandPayload matches the AsyncAPI CreateExampleCommandPayload schema.
-type createExampleCommandPayload struct {
+// CreateExampleCommandPayload is the transport-level wire format for the
+// "example.create" message, matching the AsyncAPI CreateExampleCommandPayload schema.
+type CreateExampleCommandPayload struct {
 	Command   string `json:"command"`
 	Timestamp string `json:"timestamp"`
 	Data      struct {
@@ -16,14 +17,14 @@ type createExampleCommandPayload struct {
 	} `json:"data"`
 }
 
-// DecodeCreateExampleCommand decodes a JSON message payload into a CreateRequest.
-func DecodeCreateExampleCommand(payload []byte) (example.CreateRequest, error) {
-	var p createExampleCommandPayload
+// DecodeCreateExampleCommand decodes a JSON message payload into a business request.
+func DecodeCreateExampleCommand(payload []byte) (any, error) {
+	var p CreateExampleCommandPayload
 	if err := json.Unmarshal(payload, &p); err != nil {
-		return example.CreateRequest{}, fmt.Errorf("decode create-example command: %w", err)
+		return nil, fmt.Errorf("decode create-example command: %w", err)
 	}
 	if p.Data.Name == "" {
-		return example.CreateRequest{}, fmt.Errorf("decode create-example command: name is required")
+		return nil, fmt.Errorf("decode create-example command: name is required")
 	}
 	return example.CreateRequest{Name: p.Data.Name}, nil
 }

@@ -6,13 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"go.uber.org/mock/gomock"
-
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/logger"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/worker"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/worker/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNewConsumerWorker(t *testing.T) {
