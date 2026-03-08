@@ -534,12 +534,3 @@ Contributions, bug reports, and feature requests are very welcome.
 
 MIT — see [LICENSE](LICENSE).
 
----
-
-<div align="center">
-
-Built with the [Go gopher](https://go.dev/blog/gopher) and real production pain.
-
-*If this template saved you time, consider leaving a star on GitHub.*
-
-</div>
