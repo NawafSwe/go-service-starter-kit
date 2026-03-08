@@ -6,7 +6,7 @@
 
 **A production-ready Go backend template for services that do more than serve HTTP.**
 
-[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev)
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 [![CI](https://github.com/nawafswe/go-service-starter-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/nawafswe/go-service-starter-kit/actions/workflows/ci.yml)
 
@@ -98,6 +98,23 @@ go-service-starter-kit/
 │           ├── grpc/         # gRPC — server, bootstrap, v1 handler + encode/decode via go-kit
 │           └── consumer/     # Consumer — bootstrap, v1 message decode, map-based endpoint routing
 │
+├── test/                        # Integration + load tests (isolated from internal/)
+│   ├── .env.integration         # Test-specific environment variables
+│   ├── pkg/
+│   │   ├── suite/               # Test suite — per-test DB isolation, token helpers, HTTP client
+│   │   └── testdb/              # Isolated PostgreSQL provisioning (golang-migrate)
+│   ├── api/
+│   │   └── http/
+│   │       └── example/         # Example endpoint integration tests + testdata
+│   └── load/                    # k6 load test scripts
+│       ├── data/                # Request payload templates (JSON)
+│       ├── pkg/                 # Shared config, utilities, gRPC client wrapper + proto
+│       ├── http_*.js            # HTTP endpoint load tests
+│       └── rpc_*.js             # gRPC endpoint load tests
+│
+├── scripts/
+│   └── k6.sh                   # k6 runner — lists and runs load tests
+│
 ├── db/
 │   ├── initdb.d/             # PostgreSQL init scripts (user/schema bootstrap)
 │   ├── load/                 # Seed / fixture data
@@ -152,7 +169,7 @@ Each layer communicates through **interfaces**, which means every layer can be u
 
 ### Prerequisites
 
-- Go 1.24+
+- Go 1.25+
 - Docker + Docker Compose
 
 ### 1. Clone, rename, and configure
@@ -207,6 +224,8 @@ make build
 | `make lint` | Run golangci-lint (via Docker) |
 | `make test` | Run unit tests with coverage |
 | `make test-integration` | Run integration tests |
+| `make test-load name=<test>` | Run a k6 load test (e.g. `K6_VUS=100 make test-load name=http_post_create_example`) |
+| `make test-load-list` | List available k6 load tests |
 | `make fmt` | Format code (gci + gofumpt) |
 | `make generate` | Run `go generate` across all packages |
 | `make generate-contracts` | Regenerate HTTP types from OpenAPI spec |
@@ -480,6 +499,7 @@ npx @asyncapi/cli preview docs/asyncapi/asyncapi.yaml
 | [`google.golang.org/grpc`](https://grpc.io) | gRPC server and client |
 | [`go.mongodb.org/mongo-driver`](https://github.com/mongodb/mongo-go-driver) | MongoDB client |
 | [`stretchr/testify`](https://github.com/stretchr/testify) | Test assertions (`assert`, `require`) |
+| [`NawafSwe/mockchaos`](https://github.com/NawafSwe/mockchaos) | Mock HTTP/gRPC servers with chaos engineering (latency, random status codes) |
 
 ---
 
@@ -496,11 +516,24 @@ Tests are organized around the layer they cover:
 
 `internal/` infrastructure packages ship with their own unit and integration tests.
 
+### Integration tests (`test/`)
+
+Full end-to-end tests live in `test/` — they boot the real HTTP server against an isolated PostgreSQL database per test, so tests can run in parallel safely.
+
+The `test/pkg/suite` package provides:
+- **`SetupTestSuite`** — provisions a unique database, runs migrations, initialises repositories
+- **`RunHTTPService`** — starts the real HTTP server on a random port with test dependencies
+- **`MustGenerateToken`** — creates signed JWT tokens for authenticated requests
+- **`DoRequest`** — HTTP client helper that returns body + status code
+- **`WithMockHTTPServer` / `WithMockGRPCServer`** — mock external dependencies using [`mockchaos`](https://github.com/NawafSwe/mockchaos) with chaos engineering support (random latencies, status codes)
+- **Options pattern** — configure mocks, auth overrides, and custom config per test
+
 **Test conventions:**
 - One `_test.go` file per source file (e.g. `jwt_test.go` for `jwt.go`)
 - External test package (`package foo_test`) for black-box testing
-- Table-driven tests with `tests := []struct{ name string; expectedErr error; ... }{...}` using `testify/assert` and `testify/require`
+- Table-driven tests with `tests := map[string]struct{ ... }{...}` using `testify/assert` and `testify/require`
 - `//go:build integration` tag on tests that start real servers or make real network connections
+- Embedded JSON test fixtures via `//go:embed testdata/`
 
 ```bash
 make test              # unit tests only
