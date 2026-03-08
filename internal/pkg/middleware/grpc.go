@@ -81,7 +81,7 @@ func GRPCLogging(lgr logger.Logger) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (any, error) {
-		lgr.InfoFields(ctx, fmt.Sprintf("gRPC call: %s", info.FullMethod), map[string]any{
+		lgr.InfoW(ctx, fmt.Sprintf("gRPC call: %s", info.FullMethod), map[string]any{
 			"method": info.FullMethod,
 		})
 		resp, err := handler(ctx, req)

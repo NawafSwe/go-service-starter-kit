@@ -46,6 +46,12 @@ go-service-starter-kit/
 │       ├── consumer.go       # Message consumer wiring
 │       └── job.go            # One-time job registry
 │
+├── api/                      # Proto module (github.com/nawafswe/go-service-starter-kit/api)
+│   ├── go.mod                # Nested Go module — import with: go get …/api@v1.0.0
+│   └── proto/grpc/v1/
+│       ├── example.proto     # proto3 service definitions
+│       └── gen/              # Generated Go stubs (pb.go + grpc.pb.go)
+│
 ├── internal/
 │   ├── pkg/                  # Shared infrastructure — reuse across any domain
 │   │   ├── auth/             # JWT (ClaimsParser) + bcrypt password hashing
@@ -61,6 +67,7 @@ go-service-starter-kit/
 │   │   │   ├── http/         # go-kit HTTP handler factory
 │   │   │   ├── grpc/         # go-kit gRPC handler factory
 │   │   │   └── consumer/     # go-kit endpoint wrapper for message consumers
+│   │   ├── httperrors/       # Reusable HTTP error types (400, 401, 403, 404, 409, 500)
 │   │   ├── httpx/            # Resilient HTTP client (retry, circuit breaker, OTel)
 │   │   │   └── mock/         # MockDoer for unit tests
 │   │   ├── grpcx/            # Resilient gRPC client (retry, circuit breaker, OTel)
@@ -68,14 +75,13 @@ go-service-starter-kit/
 │   │   ├── middleware/
 │   │   │   ├── http.go       # JWT HTTP middleware (AuthRequired / AuthOptional / AuthMock)
 │   │   │   ├── grpc.go       # JWT gRPC interceptors + logging + tracing interceptors
-│   │   │   ├── gokit.go      # Timeout + sliding-window rate limiter
-│   │   │   ├── logging.go    # Transport-aware logging with sensitive-field masking
-│   │   │   └── consumer.go   # JWT consumer middleware (works with any message broker)
+│   │   │   ├── consumer.go   # JWT consumer middleware (works with any message broker)
+│   │   │   ├── gokit.go      # Timeout + sliding-window rate limiter (go-kit)
+│   │   │   └── logging.go    # Transport-aware logging with sensitive-field masking
 │   │   ├── observability/
 │   │   │   ├── logger/       # zerolog-backed structured, context-aware logger
 │   │   │   ├── tracing/      # OTel trace provider (OTLP gRPC exporter)
 │   │   │   └── metric/       # OTel metric Reporter
-│   │   ├── httperrors/       # Reusable HTTP error types (BadRequest, NotFound, Processing)
 │   │   ├── text/             # NonLoggable — redacts sensitive strings from logs and JSON
 │   │   └── worker/
 │   │       ├── http.go       # HTTP worker — graceful shutdown on SIGINT/SIGTERM
@@ -91,22 +97,27 @@ go-service-starter-kit/
 │       └── transport/
 │           ├── http/         # HTTP — server, bootstrap, v1 encode/decode, JSON:API error encoder
 │           ├── grpc/         # gRPC — server, bootstrap, v1 handler + encode/decode via go-kit
-│           └── consumer/     # Consumer — bootstrap, v1 message decode, go-kit endpoint routing
+│           └── consumer/     # Consumer — bootstrap, v1 message decode, map-based endpoint routing
 │
-├── api/                      # Proto module (github.com/nawafswe/go-service-starter-kit/api)
-│   └── proto/grpc/v1/        # proto3 definitions + generated Go stubs
-├── db/migrations/            # SQL migration files (golang-migrate)
+├── db/
+│   ├── initdb.d/             # PostgreSQL init scripts (user/schema bootstrap)
+│   ├── load/                 # Seed / fixture data
+│   └── migrations/           # SQL migration files (golang-migrate)
+│
 ├── docs/
 │   ├── asyncapi/             # AsyncAPI 3.0 spec — event / message contracts
 │   ├── img/                  # Assets used in documentation
 │   └── openapi/              # OpenAPI 3.1 spec + oapi-codegen config
+│
 ├── .github/workflows/ci.yml  # CI — build + unit tests + integration tests on every push / PR
-├── docker-compose.yml        # postgres · kafka · otel-collector profiles (uses Dockerfile.dev)
+├── docker-compose.yml        # postgres, kafka, otel-collector (profile-based)
+├── otel-collector-config.yaml # OpenTelemetry Collector configuration
 ├── config.yaml               # Default configuration
 ├── .env.sample               # Environment variable template
-├── Dockerfile                # Production multi-stage build (no .env baked in)
-├── Dockerfile.dev            # Development build (copies .env.sample as .env)
-└── Makefile                  # Developer commands
+├── Dockerfile                # Production multi-stage build
+├── Dockerfile.dev            # Development build
+├── Makefile                  # Developer commands
+└── LICENSE
 ```
 
 ---
@@ -161,7 +172,7 @@ make env
 
 > **Important:** update all import paths after renaming the module. A global search-and-replace of `github.com/nawafswe/go-service-starter-kit` with your new module path covers everything.
 
-### 2. Start the database
+### 2. Start the database and run migrations
 
 ```bash
 docker compose up postgres -d
@@ -178,6 +189,32 @@ make build
 ./bin/app consumer   # message consumer
 ./bin/app <job>      # one-time job
 ```
+
+---
+
+## Makefile commands
+
+| Command | Description |
+|---|---|
+| `make build` | Build the binary to `./bin/app` |
+| `make build-docker` | Build the production Docker image |
+| `make run-http` | Build and run the HTTP server |
+| `make run-grpc` | Build and run the gRPC server |
+| `make run-consumer` | Build and run the message consumer |
+| `make env` | Copy `.env.sample` to `.env` if it doesn't exist |
+| `make clean` | Remove built binaries |
+| `make migrate-up` | Run all pending database migrations |
+| `make migrate-create name=<name>` | Create a new migration file |
+| `make lint` | Run golangci-lint (via Docker) |
+| `make test` | Run unit tests with coverage |
+| `make test-integration` | Run integration tests |
+| `make fmt` | Format code (gci + gofumpt) |
+| `make generate` | Run `go generate` across all packages |
+| `make generate-contracts` | Regenerate HTTP types from OpenAPI spec |
+| `make docker-start` | Start the Docker environment |
+| `make docker-stop` | Stop the Docker environment |
+| `make docker-clean` | Remove Docker containers and volumes |
+| `make docker-restart` | Restart the Docker environment |
 
 ---
 
@@ -201,6 +238,36 @@ The `__` double-underscore is the struct delimiter — `DB__DSN` maps to `Config
 | `JWT__SECRET` | HMAC-SHA256 signing secret |
 | `HTTP__PORT` | HTTP listen port |
 
+### Endpoint-level configuration
+
+Each endpoint can be individually tuned for timeout and rate limiting in `config.yaml`:
+
+```yaml
+ENDPOINTS:
+  EXAMPLE_CREATE:
+    DEADLINE: 5s               # request timeout
+    RATE_LIMITER:
+      INTERVAL: 1m             # sliding window duration
+      LIMIT: 100               # max requests per window
+```
+
+These values are applied as go-kit middleware in each transport's bootstrap layer.
+
+---
+
+## Docker Compose profiles
+
+Services are organised into profiles so you only run what you need:
+
+| Profile | Services | Command |
+|---|---|---|
+| *(default)* | `postgres`, `migrate` | `docker compose up` |
+| `app` | `app-http`, `app-grpc`, `app-consumer` | `docker compose --profile app up` |
+| `kafka` | `kafka` (single-node KRaft) | `docker compose --profile kafka up` |
+| `observability` | `otel-collector` | `docker compose --profile observability up` |
+
+Combine profiles as needed: `docker compose --profile app --profile kafka --profile observability up`
+
 ---
 
 ## Extending the template
@@ -213,11 +280,11 @@ Replace `internal/app/` with your service name (e.g. `internal/orders/`) and upd
 
 ```
 internal/<domain>/
-  domain/            ← add your entity + any new sentinel errors
-  repositories/<x>/  ← add your SQL queries
-  business/<op>/     ← add your handler (CreateXxx, UpdateXxx, …)
-  endpoint/v1/       ← add your go-kit endpoint adapter
-  transport/http/v1/ ← add your encode/decode codec
+  domain/            <- add your entity + any new sentinel errors
+  repositories/<x>/  <- add your SQL queries
+  business/<op>/     <- add your handler (CreateXxx, UpdateXxx, ...)
+  endpoint/v1/       <- add your go-kit endpoint adapter
+  transport/http/v1/ <- add your encode/decode codec
 ```
 
 Then wire it in `internal/app/transport/http/bootstrap/`:
@@ -234,7 +301,7 @@ func (MyProcess) Register(args ProcessArgs) (Process, error) { ... }
 // cmd/app/registry.go
 var RegistryProcessesMap = map[string]ProcessRegistry{
     "http":       NewHTTPServerProcess(),
-    "my-process": MyProcess{},  // ← add here
+    "my-process": MyProcess{},  // <- add here
 }
 ```
 
@@ -252,6 +319,33 @@ var JobsMap = map[string]Scheduler{
 ```
 
 Run it with: `./bin/app my-job`
+
+### Implement the message consumer
+
+The consumer transport is **broker-agnostic** — it defines a `MessageRouter` that maps message types to go-kit endpoints with decode functions. You provide the broker integration:
+
+```go
+// internal/app/transport/consumer/consumer.go — Start()
+reader := kafka.NewReader(kafka.ReaderConfig{
+    Brokers: c.cfg.Consumer.Brokers,
+    GroupID: c.cfg.Consumer.GroupID,
+    Topic:   c.cfg.Consumer.Topics[0],
+})
+defer reader.Close()
+
+for {
+    msg, err := reader.ReadMessage(ctx)
+    if err != nil {
+        if errors.Is(err, context.Canceled) { return nil }
+        return fmt.Errorf("consumer: read message: %w", err)
+    }
+    if err := c.handleMessage(ctx, "example.create", msg.Headers["Authorization"], msg.Value); err != nil {
+        c.lgr.Error(ctx, err, "failed to handle message")
+    }
+}
+```
+
+The `handleMessage` method authenticates the message (JWT), looks up the handler by message type from the router map, decodes the payload, and calls the go-kit endpoint — the same middleware chain (timeout, rate-limit, logging) applies as HTTP and gRPC.
 
 ### Consumer JWT authentication
 
@@ -377,7 +471,7 @@ npx @asyncapi/cli preview docs/asyncapi/asyncapi.yaml
 | [`go-kit/kit`](https://github.com/go-kit/kit) | Endpoint / transport abstraction, middleware chaining |
 | [`gorilla/mux`](https://github.com/gorilla/mux) | HTTP routing |
 | [`jmoiron/sqlx`](https://github.com/jmoiron/sqlx) | PostgreSQL — ergonomic `database/sql` wrapper |
-| [`golang-migrate/migrate`](https://github.com/golang-migrate/migrate) | Schema migrations |
+| [`golang-migrate/migrate`](https://github.com/golang-migrate/migrate) | Schema migrations (runs via Docker) |
 | [`golang-jwt/jwt`](https://github.com/golang-jwt/jwt) | JWT generation and validation |
 | [`rs/zerolog`](https://github.com/rs/zerolog) | Zero-allocation structured logging |
 | [`go.opentelemetry.io/otel`](https://opentelemetry.io) | Distributed tracing, metrics (OTLP gRPC) |
@@ -412,9 +506,10 @@ Tests are organized around the layer they cover:
 ```bash
 make test              # unit tests only
 make test-integration  # integration tests (includes server lifecycle, DB connectivity)
+make lint              # golangci-lint via Docker
 ```
 
-CI runs both in sequences — unit tests must pass before integration tests run.
+CI runs both in sequence — unit tests must pass before integration tests run.
 
 ---
 
@@ -445,6 +540,6 @@ MIT — see [LICENSE](LICENSE).
 
 Built with the [Go gopher](https://go.dev/blog/gopher) and real production pain.
 
-*If this template saved you time, consider leaving a ⭐ on GitHub.*
+*If this template saved you time, consider leaving a star on GitHub.*
 
 </div>
