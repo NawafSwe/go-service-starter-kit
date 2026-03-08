@@ -1,6 +1,6 @@
 module github.com/nawafswe/go-service-starter-kit/api
 
-go 1.24.4
+go 1.25.3
 
 require (
 	google.golang.org/grpc v1.73.0
