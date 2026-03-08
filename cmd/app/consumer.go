@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	consumerapp "github.com/nawafswe/go-service-starter-kit/internal/app/transport/consumer"
+	"github.com/nawafswe/go-service-starter-kit/internal/app/transport/consumer/bootstrap"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/clients/db/postgres"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/tracing"
@@ -28,13 +29,17 @@ func (c ConsumerProcess) Register(args ProcessArgs) (Process, error) {
 		return nil, err
 	}
 
+	resources := bootstrap.SharedResource{Lgr: lgr}
+
 	dbConn, err := postgres.NewConn(ctx, cfg.DB, fmt.Sprintf("%s.consumer.db", config.ServiceName), tp)
 	if err != nil {
 		lgr.Error(ctx, err, "[FATAL] failed to connect to database")
 		return nil, err
 	}
 
-	consumer, err := consumerapp.NewConsumer(ctx, cfg, dbConn, lgr)
+	deps := bootstrap.Dependencies{DBConn: dbConn}
+
+	consumer, err := consumerapp.NewConsumer(ctx, cfg, &deps, &resources)
 	if err != nil {
 		lgr.Error(ctx, err, "[FATAL] failed to build consumer")
 		return nil, err
