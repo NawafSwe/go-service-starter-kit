@@ -16,7 +16,7 @@ type (
 	// SharedResource holds cross-cutting concerns available to all handlers.
 	SharedResource struct {
 		Lgr    logger.Logger
-		Tracer trace.Tracer
+		Tracer trace.Tracer // optional — nil means no tracing
 	}
 
 	// SharedRepositories holds initialised repository instances.
@@ -24,3 +24,21 @@ type (
 		ExampleRepository example.Repository
 	}
 )
+
+// ResourceOption configures optional fields on SharedResource.
+type ResourceOption func(*SharedResource)
+
+// NewSharedResource creates a SharedResource with the required logger and optional
+// observability concerns. Without any options, tracing is disabled.
+func NewSharedResource(lgr logger.Logger, opts ...ResourceOption) *SharedResource {
+	r := &SharedResource{Lgr: lgr}
+	for _, opt := range opts {
+		opt(r)
+	}
+	return r
+}
+
+// WithTracer enables distributed tracing on the gRPC server.
+func WithTracer(t trace.Tracer) ResourceOption {
+	return func(r *SharedResource) { r.Tracer = t }
+}

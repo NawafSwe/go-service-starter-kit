@@ -12,6 +12,8 @@ import (
 	"github.com/nawafswe/go-service-starter-kit/internal/httpx"
 	"github.com/nawafswe/go-service-starter-kit/internal/httpx/mock"
 	"github.com/sony/gobreaker"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric/noop"
 	nooptrace "go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/mock/gomock"
@@ -34,9 +36,9 @@ func defaultConfig() httpx.Config {
 	}
 }
 
-func newClient(t *testing.T, cfg httpx.Config, doer httpx.Doer) *httpx.Client {
+func newClient(t *testing.T, cfg httpx.Config, doer httpx.Doer, opts ...httpx.Option) *httpx.Client {
 	t.Helper()
-	c, err := httpx.New(cfg, doer, noop.NewMeterProvider().Meter("test"), nooptrace.NewTracerProvider())
+	c, err := httpx.New(cfg, doer, opts...)
 	if err != nil {
 		t.Fatalf("httpx.New: %v", err)
 	}
@@ -52,13 +54,37 @@ func serverErrResponse() *http.Response {
 }
 
 func TestNew(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	c, err := httpx.New(defaultConfig(), mock.NewMockDoer(ctrl), noop.NewMeterProvider().Meter("test"), nooptrace.NewTracerProvider())
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	tests := []struct {
+		name string
+		opts []httpx.Option
+	}{
+		{
+			name: "without options",
+		},
+		{
+			name: "with meter",
+			opts: []httpx.Option{httpx.WithMeter(noop.NewMeterProvider().Meter("test"))},
+		},
+		{
+			name: "with tracer provider",
+			opts: []httpx.Option{httpx.WithTracerProvider(nooptrace.NewTracerProvider())},
+		},
+		{
+			name: "with meter and tracer provider",
+			opts: []httpx.Option{
+				httpx.WithMeter(noop.NewMeterProvider().Meter("test")),
+				httpx.WithTracerProvider(nooptrace.NewTracerProvider()),
+			},
+		},
 	}
-	if c == nil {
-		t.Fatal("expected non-nil client")
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			c, err := httpx.New(defaultConfig(), mock.NewMockDoer(ctrl), tc.opts...)
+			require.NoError(t, err)
+			assert.NotNil(t, c)
+		})
 	}
 }
 
@@ -67,6 +93,7 @@ func TestClient_Do(t *testing.T) {
 		name    string
 		setup   func(m *mock.MockDoer)
 		cfg     func() httpx.Config
+		opts    []httpx.Option
 		wantErr bool
 	}{
 		{
@@ -74,6 +101,32 @@ func TestClient_Do(t *testing.T) {
 			setup: func(m *mock.MockDoer) {
 				m.EXPECT().Do(gomock.Any()).Return(okResponse(), nil)
 			},
+		},
+		{
+			name: "success with meter and tracer",
+			setup: func(m *mock.MockDoer) {
+				m.EXPECT().Do(gomock.Any()).Return(okResponse(), nil)
+			},
+			opts: []httpx.Option{
+				httpx.WithMeter(noop.NewMeterProvider().Meter("test")),
+				httpx.WithTracerProvider(nooptrace.NewTracerProvider()),
+			},
+		},
+		{
+			name: "error with meter and tracer records metrics",
+			setup: func(m *mock.MockDoer) {
+				m.EXPECT().Do(gomock.Any()).Return(nil, errors.New("err")).Times(1)
+			},
+			cfg: func() httpx.Config {
+				c := defaultConfig()
+				c.MaxRetries = 0
+				return c
+			},
+			opts: []httpx.Option{
+				httpx.WithMeter(noop.NewMeterProvider().Meter("test")),
+				httpx.WithTracerProvider(nooptrace.NewTracerProvider()),
+			},
+			wantErr: true,
 		},
 		{
 			name: "retries on server error then succeeds",
@@ -167,7 +220,7 @@ func TestClient_Do(t *testing.T) {
 			if tc.cfg != nil {
 				cfg = tc.cfg()
 			}
-			c := newClient(t, cfg, m)
+			c := newClient(t, cfg, m, tc.opts...)
 
 			ctx := context.Background()
 			if tc.name == "context cancelled during retry" {
@@ -186,17 +239,11 @@ func TestClient_Do(t *testing.T) {
 
 			resp, err := c.Do(ctx, req)
 			if tc.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
+				assert.Error(t, err)
 				return
 			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if resp.StatusCode != http.StatusOK {
-				t.Errorf("expected 200, got %d", resp.StatusCode)
-			}
+			require.NoError(t, err)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 	}
 }
@@ -228,6 +275,50 @@ func TestClient_Do_BodyReadError(t *testing.T) {
 	_, err := c.Do(context.Background(), req)
 	if err == nil {
 		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestClient_Do_RetryBackoff(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  func() httpx.Config
+	}{
+		{
+			name: "jitter backoff with min greater than zero",
+			cfg: func() httpx.Config {
+				c := defaultConfig()
+				c.MaxRetries = 1
+				c.RetryWaitMin = 1 * time.Millisecond
+				c.RetryWaitMax = 10 * time.Millisecond
+				return c
+			},
+		},
+		{
+			name: "backoff capped at max when base exceeds max",
+			cfg: func() httpx.Config {
+				c := defaultConfig()
+				c.MaxRetries = 1
+				c.RetryWaitMin = 100 * time.Millisecond
+				c.RetryWaitMax = 50 * time.Millisecond
+				return c
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			m := mock.NewMockDoer(ctrl)
+			gomock.InOrder(
+				m.EXPECT().Do(gomock.Any()).Return(serverErrResponse(), nil),
+				m.EXPECT().Do(gomock.Any()).Return(okResponse(), nil),
+			)
+			c := newClient(t, tc.cfg(), m)
+			req, _ := http.NewRequest(http.MethodGet, "http://example.com/items", nil)
+			resp, err := c.Do(context.Background(), req)
+			require.NoError(t, err)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+		})
 	}
 }
 

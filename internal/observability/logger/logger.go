@@ -122,8 +122,6 @@ func (l ZerologLogger) WithCallerSkip(skip int) ZerologLogger {
 	return l
 }
 
-// ---- Logger interface implementation ----
-
 func (l ZerologLogger) Debug(ctx context.Context, msg string) {
 	l.newEvent(ctx, zerolog.DebugLevel, nil).Msg(msg)
 }

@@ -149,6 +149,20 @@ func TestLogWithFields(t *testing.T) {
 			contains: "value",
 		},
 		{
+			name: "DebugW",
+			log: func(lgr logger.ZerologLogger) {
+				lgr.DebugW(context.Background(), "debug fields", map[string]any{"dbg": "yes"})
+			},
+			contains: "dbg",
+		},
+		{
+			name: "WarnW",
+			log: func(lgr logger.ZerologLogger) {
+				lgr.WarnW(context.Background(), "warn fields", map[string]any{"severity": "medium"})
+			},
+			contains: "medium",
+		},
+		{
 			name: "ErrorW",
 			log: func(lgr logger.ZerologLogger) {
 				lgr.ErrorW(context.Background(), errors.New("err"), "fields message", map[string]any{"trace": "abc"})
@@ -164,4 +178,38 @@ func TestLogWithFields(t *testing.T) {
 			assert.Contains(t, buf.String(), tc.contains)
 		})
 	}
+}
+
+func TestWithPrettyOutput(t *testing.T) {
+	lgr := logger.NewLogger(logger.DebugLevel, "test-app", "1.0.0", "test").WithPrettyOutput()
+	// WithPrettyOutput writes to os.Stderr; verify it doesn't panic.
+	assert.NotPanics(t, func() {
+		lgr.Info(context.Background(), "pretty output test")
+	})
+}
+
+func TestWithCallerSkip(t *testing.T) {
+	var buf bytes.Buffer
+	lgr := newTestLogger(&buf).WithCallerSkip(3)
+	lgr.Info(context.Background(), "caller skip test")
+	assert.Contains(t, buf.String(), "caller skip test")
+}
+
+func TestNilContext(t *testing.T) {
+	var buf bytes.Buffer
+	lgr := newTestLogger(&buf)
+	//nolint:staticcheck // intentionally passing nil context to test the nil guard
+	lgr.Info(nil, "nil context test")
+	assert.Contains(t, buf.String(), "nil context test")
+}
+
+func TestToZerologLevel_InvalidLevel(t *testing.T) {
+	// Invalid level defaults to info — debug messages should be filtered.
+	var buf bytes.Buffer
+	lgr := logger.NewLogger("invalid-level", "app", "1.0", "test").WithOutput(&buf)
+	lgr.Debug(context.Background(), "should be filtered")
+	assert.Empty(t, buf.String())
+
+	lgr.Info(context.Background(), "should appear")
+	assert.Contains(t, buf.String(), "should appear")
 }

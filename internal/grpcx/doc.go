@@ -20,8 +20,8 @@
 //	        },
 //	    },
 //	    conn,
-//	    meter,
-//	    tracerProvider,
+//	    grpcx.WithMeter(meter),             // optional
+//	    grpcx.WithTracerProvider(tp),       // optional
 //	)
 //
 //	err = client.Invoke(ctx, "/inventory.v1.InventoryService/GetItem", req, &resp)

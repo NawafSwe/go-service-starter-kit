@@ -22,7 +22,9 @@ func InitializeRoutes(
 ) (*mux.Router, error) {
 	router := mux.NewRouter()
 	router.Use(mux.CORSMethodMiddleware(router))
-	router.Use(otelhttp.NewMiddleware("http.server"))
+	if resources.Tracer != nil {
+		router.Use(otelhttp.NewMiddleware("http.server"))
+	}
 
 	// Health check — wires DB connectivity into the liveness probe.
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

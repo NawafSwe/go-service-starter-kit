@@ -20,23 +20,32 @@ type Invoker interface {
 	Invoke(ctx context.Context, method string, args, reply any, opts ...grpc.CallOption) error
 }
 
+// Option configures the resilient gRPC client.
+type Option func(*Client)
+
+// WithMeter enables OTel metrics on the gRPC client.
+func WithMeter(m metric.Meter) Option {
+	return func(c *Client) { c.meter = m }
+}
+
+// WithTracerProvider enables OTel tracing on the gRPC client.
+func WithTracerProvider(tp trace.TracerProvider) Option {
+	return func(c *Client) { c.tracer = tp.Tracer(c.cfg.Name) }
+}
+
 type Client struct {
 	invoker Invoker
 	cb      *gobreaker.CircuitBreaker
 	cfg     Config
+	meter   metric.Meter
 	counter metric.Int64Counter
 	tracer  trace.Tracer
 }
 
-func New(cfg Config, invoker Invoker, m metric.Meter, tp trace.TracerProvider) (*Client, error) {
-	counter, err := m.Int64Counter(
-		"grpc_client_requests_total",
-		metric.WithDescription("Total gRPC client requests by dependency"),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("grpcx: register counter: %w", err)
-	}
-
+// New creates a resilient gRPC client with circuit breaker and retry support.
+// By default, tracing and metrics are disabled. Use WithMeter and
+// WithTracerProvider to enable them.
+func New(cfg Config, invoker Invoker, opts ...Option) (*Client, error) {
 	cb := gobreaker.NewCircuitBreaker(gobreaker.Settings{
 		Name:        cfg.Name,
 		MaxRequests: cfg.CircuitBreaker.MaxRequests,
@@ -48,18 +57,35 @@ func New(cfg Config, invoker Invoker, m metric.Meter, tp trace.TracerProvider) (
 		},
 	})
 
-	return &Client{
+	c := &Client{
 		invoker: invoker,
 		cb:      cb,
 		cfg:     cfg,
-		counter: counter,
-		tracer:  tp.Tracer(cfg.Name),
-	}, nil
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	if c.meter != nil {
+		counter, err := c.meter.Int64Counter(
+			"grpc_client_requests_total",
+			metric.WithDescription("Total gRPC client requests by dependency"),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("grpcx: register counter: %w", err)
+		}
+		c.counter = counter
+	}
+
+	return c, nil
 }
 
 func (c *Client) Invoke(ctx context.Context, method string, args, reply any, opts ...grpc.CallOption) error {
-	ctx, span := c.tracer.Start(ctx, method, trace.WithSpanKind(trace.SpanKindClient))
-	defer span.End()
+	var span trace.Span
+	if c.tracer != nil {
+		ctx, span = c.tracer.Start(ctx, method, trace.WithSpanKind(trace.SpanKindClient))
+		defer span.End()
+	}
 
 	baseAttrs := []attribute.KeyValue{
 		attribute.String("dependency", c.cfg.Name),
@@ -82,23 +108,29 @@ func (c *Client) Invoke(ctx context.Context, method string, args, reply any, opt
 		})
 
 		if err == nil {
-			c.counter.Add(ctx, 1, metric.WithAttributes(
-				append(baseAttrs, attribute.String("result", "success"))...,
-			))
+			if c.counter != nil {
+				c.counter.Add(ctx, 1, metric.WithAttributes(
+					append(baseAttrs, attribute.String("result", "success"))...,
+				))
+			}
 			return nil
 		}
 
 		lastErr = err
-		c.counter.Add(ctx, 1, metric.WithAttributes(
-			append(baseAttrs, attribute.String("result", "error"))...,
-		))
+		if c.counter != nil {
+			c.counter.Add(ctx, 1, metric.WithAttributes(
+				append(baseAttrs, attribute.String("result", "error"))...,
+			))
+		}
 
 		if errors.Is(err, gobreaker.ErrOpenState) || errors.Is(err, gobreaker.ErrTooManyRequests) {
 			break
 		}
 	}
 
-	span.RecordError(lastErr)
+	if span != nil {
+		span.RecordError(lastErr)
+	}
 	return lastErr
 }
 

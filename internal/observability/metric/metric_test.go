@@ -25,6 +25,16 @@ func TestReporter(t *testing.T) {
 			},
 		},
 		{
+			name: "record with int64 attr type",
+			attrs: map[string]any{
+				"latency_ns": int64(123456),
+			},
+		},
+		{
+			name:  "record with nil map",
+			attrs: nil,
+		},
+		{
 			name: "record with unknown attr types",
 			attrs: map[string]any{
 				"known":   "value",

@@ -62,9 +62,7 @@ func WithAuthMock(userID, deviceID string) Option {
 func RunHTTPService(t *testing.T, s *Suite) string {
 	t.Helper()
 
-	resources := &httpbootstrap.SharedResource{
-		Lgr: s.Lgr,
-	}
+	resources := httpbootstrap.NewSharedResource(s.Lgr)
 	deps := &httpbootstrap.Dependencies{
 		DBConn: s.SqlDB,
 	}

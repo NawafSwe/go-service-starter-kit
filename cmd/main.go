@@ -67,11 +67,14 @@ func main() {
 	lgr.Info(ctx, "config loaded successfully")
 
 	args := app.ProcessArgs{
-		Ctx:           ctx,
-		Lgr:           lgr,
-		Cfg:           cfg,
-		MeterProvider: meterProvider(),
-		Meter:         meter(config.ServiceName),
+		Ctx: ctx,
+		Lgr: lgr,
+		Cfg: cfg,
+	}
+
+	if cfg.Metrics.Enabled {
+		args.MeterProvider = meterProvider()
+		args.Meter = meter(config.ServiceName)
 	}
 
 	// One-time jobs run and exit.

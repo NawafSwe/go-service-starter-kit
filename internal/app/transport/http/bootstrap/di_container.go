@@ -17,9 +17,9 @@ type (
 	// SharedResource holds cross-cutting concerns available to all handlers.
 	SharedResource struct {
 		Lgr            logger.Logger
-		Tracer         trace.Tracer
-		MetricProvider otelmeter.MeterProvider
-		Meter          otelmeter.Meter
+		Tracer         trace.Tracer            // optional — nil means no tracing
+		MetricProvider otelmeter.MeterProvider // optional — nil means no metrics
+		Meter          otelmeter.Meter         // optional — nil means no metrics
 	}
 
 	// SharedRepositories holds initialised repository instances.
@@ -27,3 +27,31 @@ type (
 		ExampleRepository example.Repository
 	}
 )
+
+// ResourceOption configures optional fields on SharedResource.
+type ResourceOption func(*SharedResource)
+
+// NewSharedResource creates a SharedResource with the required logger and optional
+// observability concerns. Without any options, tracing and metrics are disabled.
+func NewSharedResource(lgr logger.Logger, opts ...ResourceOption) *SharedResource {
+	r := &SharedResource{Lgr: lgr}
+	for _, opt := range opts {
+		opt(r)
+	}
+	return r
+}
+
+// WithTracer enables distributed tracing on the HTTP server.
+func WithTracer(t trace.Tracer) ResourceOption {
+	return func(r *SharedResource) { r.Tracer = t }
+}
+
+// WithMeter enables runtime metrics collection on the HTTP server.
+func WithMeter(m otelmeter.Meter) ResourceOption {
+	return func(r *SharedResource) { r.Meter = m }
+}
+
+// WithMeterProvider sets the OTel MeterProvider on the HTTP server.
+func WithMeterProvider(mp otelmeter.MeterProvider) ResourceOption {
+	return func(r *SharedResource) { r.MetricProvider = mp }
+}

@@ -22,23 +22,32 @@ type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+// Option configures the resilient HTTP client.
+type Option func(*Client)
+
+// WithMeter enables OTel metrics on the HTTP client.
+func WithMeter(m metric.Meter) Option {
+	return func(c *Client) { c.meter = m }
+}
+
+// WithTracerProvider enables OTel tracing on the HTTP client.
+func WithTracerProvider(tp trace.TracerProvider) Option {
+	return func(c *Client) { c.tracer = tp.Tracer(c.cfg.Name) }
+}
+
 type Client struct {
 	doer    Doer
 	cb      *gobreaker.CircuitBreaker
 	cfg     Config
+	meter   metric.Meter
 	counter metric.Int64Counter
 	tracer  trace.Tracer
 }
 
-func New(cfg Config, doer Doer, m metric.Meter, tp trace.TracerProvider) (*Client, error) {
-	counter, err := m.Int64Counter(
-		"http_client_requests_total",
-		metric.WithDescription("Total HTTP client requests by dependency"),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("httpx: register counter: %w", err)
-	}
-
+// New creates a resilient HTTP client with circuit breaker and retry support.
+// By default, tracing and metrics are disabled. Use WithMeter and
+// WithTracerProvider to enable them.
+func New(cfg Config, doer Doer, opts ...Option) (*Client, error) {
 	cb := gobreaker.NewCircuitBreaker(gobreaker.Settings{
 		Name:        cfg.Name,
 		MaxRequests: cfg.CircuitBreaker.MaxRequests,
@@ -50,13 +59,27 @@ func New(cfg Config, doer Doer, m metric.Meter, tp trace.TracerProvider) (*Clien
 		},
 	})
 
-	return &Client{
-		doer:    doer,
-		cb:      cb,
-		cfg:     cfg,
-		counter: counter,
-		tracer:  tp.Tracer(cfg.Name),
-	}, nil
+	c := &Client{
+		doer: doer,
+		cb:   cb,
+		cfg:  cfg,
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	if c.meter != nil {
+		counter, err := c.meter.Int64Counter(
+			"http_client_requests_total",
+			metric.WithDescription("Total HTTP client requests by dependency"),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("httpx: register counter: %w", err)
+		}
+		c.counter = counter
+	}
+
+	return c, nil
 }
 
 func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, error) {
@@ -70,10 +93,13 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		req.Body.Close()
 	}
 
-	ctx, span := c.tracer.Start(ctx, fmt.Sprintf("%s %s", req.Method, req.URL.Path),
-		trace.WithSpanKind(trace.SpanKindClient),
-	)
-	defer span.End()
+	var span trace.Span
+	if c.tracer != nil {
+		ctx, span = c.tracer.Start(ctx, fmt.Sprintf("%s %s", req.Method, req.URL.Path),
+			trace.WithSpanKind(trace.SpanKindClient),
+		)
+		defer span.End()
+	}
 
 	baseAttrs := []attribute.KeyValue{
 		attribute.String("dependency", c.cfg.Name),
@@ -110,23 +136,29 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		})
 
 		if err == nil {
-			c.counter.Add(ctx, 1, metric.WithAttributes(
-				append(baseAttrs, attribute.String("result", "success"))...,
-			))
+			if c.counter != nil {
+				c.counter.Add(ctx, 1, metric.WithAttributes(
+					append(baseAttrs, attribute.String("result", "success"))...,
+				))
+			}
 			return result.(*http.Response), nil
 		}
 
 		lastErr = err
-		c.counter.Add(ctx, 1, metric.WithAttributes(
-			append(baseAttrs, attribute.String("result", "error"))...,
-		))
+		if c.counter != nil {
+			c.counter.Add(ctx, 1, metric.WithAttributes(
+				append(baseAttrs, attribute.String("result", "error"))...,
+			))
+		}
 
 		if errors.Is(err, gobreaker.ErrOpenState) || errors.Is(err, gobreaker.ErrTooManyRequests) {
 			break
 		}
 	}
 
-	span.RecordError(lastErr)
+	if span != nil {
+		span.RecordError(lastErr)
+	}
 	return nil, lastErr
 }
 

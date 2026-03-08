@@ -9,6 +9,8 @@ import (
 	"github.com/nawafswe/go-service-starter-kit/internal/grpcx"
 	"github.com/nawafswe/go-service-starter-kit/internal/grpcx/mock"
 	"github.com/sony/gobreaker"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric/noop"
 	nooptrace "go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/mock/gomock"
@@ -31,9 +33,9 @@ func defaultConfig() grpcx.Config {
 	}
 }
 
-func newClient(t *testing.T, cfg grpcx.Config, invoker grpcx.Invoker) *grpcx.Client {
+func newClient(t *testing.T, cfg grpcx.Config, invoker grpcx.Invoker, opts ...grpcx.Option) *grpcx.Client {
 	t.Helper()
-	c, err := grpcx.New(cfg, invoker, noop.NewMeterProvider().Meter("test"), nooptrace.NewTracerProvider())
+	c, err := grpcx.New(cfg, invoker, opts...)
 	if err != nil {
 		t.Fatalf("grpcx.New: %v", err)
 	}
@@ -41,13 +43,37 @@ func newClient(t *testing.T, cfg grpcx.Config, invoker grpcx.Invoker) *grpcx.Cli
 }
 
 func TestNew(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	c, err := grpcx.New(defaultConfig(), mock.NewMockInvoker(ctrl), noop.NewMeterProvider().Meter("test"), nooptrace.NewTracerProvider())
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	tests := []struct {
+		name string
+		opts []grpcx.Option
+	}{
+		{
+			name: "without options",
+		},
+		{
+			name: "with meter",
+			opts: []grpcx.Option{grpcx.WithMeter(noop.NewMeterProvider().Meter("test"))},
+		},
+		{
+			name: "with tracer provider",
+			opts: []grpcx.Option{grpcx.WithTracerProvider(nooptrace.NewTracerProvider())},
+		},
+		{
+			name: "with meter and tracer provider",
+			opts: []grpcx.Option{
+				grpcx.WithMeter(noop.NewMeterProvider().Meter("test")),
+				grpcx.WithTracerProvider(nooptrace.NewTracerProvider()),
+			},
+		},
 	}
-	if c == nil {
-		t.Fatal("expected non-nil client")
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			c, err := grpcx.New(defaultConfig(), mock.NewMockInvoker(ctrl), tc.opts...)
+			require.NoError(t, err)
+			assert.NotNil(t, c)
+		})
 	}
 }
 
@@ -58,6 +84,7 @@ func TestClient_Invoke(t *testing.T) {
 		name    string
 		setup   func(m *mock.MockInvoker)
 		cfg     func() grpcx.Config
+		opts    []grpcx.Option
 		wantErr bool
 	}{
 		{
@@ -65,6 +92,33 @@ func TestClient_Invoke(t *testing.T) {
 			setup: func(m *mock.MockInvoker) {
 				m.EXPECT().Invoke(gomock.Any(), method, gomock.Any(), gomock.Any()).Return(nil)
 			},
+		},
+		{
+			name: "success with meter and tracer",
+			setup: func(m *mock.MockInvoker) {
+				m.EXPECT().Invoke(gomock.Any(), method, gomock.Any(), gomock.Any()).Return(nil)
+			},
+			opts: []grpcx.Option{
+				grpcx.WithMeter(noop.NewMeterProvider().Meter("test")),
+				grpcx.WithTracerProvider(nooptrace.NewTracerProvider()),
+			},
+		},
+		{
+			name: "error with meter and tracer records metrics",
+			setup: func(m *mock.MockInvoker) {
+				m.EXPECT().Invoke(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(errors.New("err")).Times(1)
+			},
+			cfg: func() grpcx.Config {
+				c := defaultConfig()
+				c.MaxRetries = 0
+				return c
+			},
+			opts: []grpcx.Option{
+				grpcx.WithMeter(noop.NewMeterProvider().Meter("test")),
+				grpcx.WithTracerProvider(nooptrace.NewTracerProvider()),
+			},
+			wantErr: true,
 		},
 		{
 			name: "retries on error then succeeds",
@@ -129,7 +183,7 @@ func TestClient_Invoke(t *testing.T) {
 			if tc.cfg != nil {
 				cfg = tc.cfg()
 			}
-			c := newClient(t, cfg, m)
+			c := newClient(t, cfg, m, tc.opts...)
 
 			ctx := context.Background()
 			if tc.name == "context cancelled during retry" {
@@ -140,14 +194,54 @@ func TestClient_Invoke(t *testing.T) {
 
 			err := c.Invoke(ctx, method, nil, nil)
 			if tc.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
+				assert.Error(t, err)
 				return
 			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestClient_Invoke_RetryBackoff(t *testing.T) {
+	const method = "/example.v1.ExampleService/GetExample"
+
+	tests := []struct {
+		name string
+		cfg  func() grpcx.Config
+	}{
+		{
+			name: "jitter backoff with min greater than zero",
+			cfg: func() grpcx.Config {
+				c := defaultConfig()
+				c.MaxRetries = 1
+				c.RetryWaitMin = 1 * time.Millisecond
+				c.RetryWaitMax = 10 * time.Millisecond
+				return c
+			},
+		},
+		{
+			name: "backoff capped at max when base exceeds max",
+			cfg: func() grpcx.Config {
+				c := defaultConfig()
+				c.MaxRetries = 1
+				c.RetryWaitMin = 100 * time.Millisecond
+				c.RetryWaitMax = 50 * time.Millisecond
+				return c
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			m := mock.NewMockInvoker(ctrl)
+			gomock.InOrder(
+				m.EXPECT().Invoke(gomock.Any(), method, gomock.Any(), gomock.Any()).Return(errors.New("transient")),
+				m.EXPECT().Invoke(gomock.Any(), method, gomock.Any(), gomock.Any()).Return(nil),
+			)
+			c := newClient(t, tc.cfg(), m)
+			err := c.Invoke(context.Background(), method, nil, nil)
+			require.NoError(t, err)
 		})
 	}
 }

@@ -9,12 +9,13 @@ import (
 )
 
 // ProcessArgs encapsulates shared dependencies passed to every process at startup.
+// MeterProvider and Meter are optional — when nil, metrics collection is disabled.
 type ProcessArgs struct {
 	Ctx           context.Context
 	Cfg           config.Config
 	Lgr           logger.Logger
-	MeterProvider otelmeter.MeterProvider
-	Meter         otelmeter.Meter
+	MeterProvider otelmeter.MeterProvider // optional
+	Meter         otelmeter.Meter         // optional
 }
 
 // Process is the interface that every long-running process must implement.

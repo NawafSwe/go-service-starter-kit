@@ -8,6 +8,7 @@ import (
 
 	"github.com/nawafswe/go-service-starter-kit/internal/clients/db/postgres"
 	"github.com/nawafswe/go-service-starter-kit/internal/config"
+	"github.com/stretchr/testify/assert"
 	nooptrace "go.opentelemetry.io/otel/trace/noop"
 )
 
@@ -17,8 +18,24 @@ func TestNewConn_UnreachableHost(t *testing.T) {
 		MaxOpenConnections: 2,
 		MaxIdleConnections: 1,
 	}
-	_, err := postgres.NewConn(context.Background(), cfg, "test", nooptrace.NewTracerProvider())
-	if err == nil {
-		t.Fatal("expected error for unreachable host, got nil")
+
+	tests := []struct {
+		name string
+		opts []postgres.Option
+	}{
+		{
+			name: "without options",
+		},
+		{
+			name: "with tracer provider",
+			opts: []postgres.Option{postgres.WithTracerProvider(nooptrace.NewTracerProvider())},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := postgres.NewConn(context.Background(), cfg, "test", tc.opts...)
+			assert.Error(t, err)
+		})
 	}
 }

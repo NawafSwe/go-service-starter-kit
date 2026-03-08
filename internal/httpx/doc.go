@@ -18,8 +18,8 @@
 //	        },
 //	    },
 //	    &http.Client{},
-//	    meter,
-//	    tracerProvider,
+//	    httpx.WithMeter(meter),             // optional
+//	    httpx.WithTracerProvider(tp),       // optional
 //	)
 //
 //	req, _ := http.NewRequest(http.MethodGet, "https://api.example.com/items", nil)

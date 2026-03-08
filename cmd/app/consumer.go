@@ -31,7 +31,11 @@ func (c ConsumerProcess) Register(args ProcessArgs) (Process, error) {
 
 	resources := bootstrap.SharedResource{Lgr: lgr}
 
-	dbConn, err := postgres.NewConn(ctx, cfg.DB, fmt.Sprintf("%s.consumer.db", config.ServiceName), tp)
+	var dbOpts []postgres.Option
+	if cfg.General.Tracing.Enabled {
+		dbOpts = append(dbOpts, postgres.WithTracerProvider(tp))
+	}
+	dbConn, err := postgres.NewConn(ctx, cfg.DB, fmt.Sprintf("%s.consumer.db", config.ServiceName), dbOpts...)
 	if err != nil {
 		lgr.Error(ctx, err, "[FATAL] failed to connect to database")
 		return nil, err

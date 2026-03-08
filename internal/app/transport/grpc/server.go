@@ -42,12 +42,16 @@ func NewGRPCServer(
 		return nil, fmt.Errorf("grpc: failed to create claims parser: %w", err)
 	}
 
+	interceptors := []grpc.UnaryServerInterceptor{
+		middleware.GRPCAuthRequired(cfg.AuthorizationMock, claimsParser),
+		middleware.GRPCLogging(resources.Lgr),
+	}
+	if resources.Tracer != nil {
+		interceptors = append(interceptors, middleware.GRPCTracing(resources.Tracer))
+	}
+
 	srv := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(
-			middleware.GRPCAuthRequired(cfg.AuthorizationMock, claimsParser),
-			middleware.GRPCLogging(resources.Lgr),
-			middleware.GRPCTracing(resources.Tracer),
-		),
+		grpc.ChainUnaryInterceptor(interceptors...),
 	)
 
 	// Register example service — wired through go-kit endpoints.

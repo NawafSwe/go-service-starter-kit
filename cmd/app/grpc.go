@@ -29,12 +29,18 @@ func (g GRPCServerProcess) Register(args ProcessArgs) (Process, error) {
 		return nil, err
 	}
 
-	resources := bootstrap.SharedResource{
-		Lgr:    lgr,
-		Tracer: tp.Tracer(worker.GRPCWorkerName),
+	// Build shared resources — tracer is optional.
+	var resourceOpts []bootstrap.ResourceOption
+	if cfg.General.Tracing.Enabled {
+		resourceOpts = append(resourceOpts, bootstrap.WithTracer(tp.Tracer(worker.GRPCWorkerName)))
 	}
+	resources := bootstrap.NewSharedResource(lgr, resourceOpts...)
 
-	dbConn, err := postgres.NewConn(ctx, cfg.DB, fmt.Sprintf("%s.grpc.db", config.ServiceName), tp)
+	var dbOpts []postgres.Option
+	if cfg.General.Tracing.Enabled {
+		dbOpts = append(dbOpts, postgres.WithTracerProvider(tp))
+	}
+	dbConn, err := postgres.NewConn(ctx, cfg.DB, fmt.Sprintf("%s.grpc.db", config.ServiceName), dbOpts...)
 	if err != nil {
 		lgr.Error(ctx, err, "[FATAL] failed to connect to database")
 		return nil, err
@@ -42,7 +48,7 @@ func (g GRPCServerProcess) Register(args ProcessArgs) (Process, error) {
 
 	deps := bootstrap.Dependencies{DBConn: dbConn}
 
-	srv, err := grpcserver.NewGRPCServer(ctx, cfg, &deps, &resources)
+	srv, err := grpcserver.NewGRPCServer(ctx, cfg, &deps, resources)
 	if err != nil {
 		lgr.Error(ctx, err, "[FATAL] failed to build gRPC server")
 		return nil, err
