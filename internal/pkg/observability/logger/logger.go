@@ -17,13 +17,13 @@ import (
 // All application code should depend on this interface, never on ZerologLogger directly.
 type Logger interface {
 	Debug(ctx context.Context, msg string)
-	DebugFields(ctx context.Context, msg string, fields map[string]any)
+	DebugW(ctx context.Context, msg string, fields map[string]any)
 	Info(ctx context.Context, msg string)
-	InfoFields(ctx context.Context, msg string, fields map[string]any)
+	InfoW(ctx context.Context, msg string, fields map[string]any)
 	Warn(ctx context.Context, msg string)
-	WarnFields(ctx context.Context, msg string, fields map[string]any)
+	WarnW(ctx context.Context, msg string, fields map[string]any)
 	Error(ctx context.Context, err error, msg string)
-	ErrorFields(ctx context.Context, err error, msg string, fields map[string]any)
+	ErrorW(ctx context.Context, err error, msg string, fields map[string]any)
 }
 
 // Level enumerates available log levels.
@@ -128,7 +128,7 @@ func (l ZerologLogger) Debug(ctx context.Context, msg string) {
 	l.newEvent(ctx, zerolog.DebugLevel, nil).Msg(msg)
 }
 
-func (l ZerologLogger) DebugFields(ctx context.Context, msg string, fields map[string]any) {
+func (l ZerologLogger) DebugW(ctx context.Context, msg string, fields map[string]any) {
 	l.newEvent(ctx, zerolog.DebugLevel, fields).Msg(msg)
 }
 
@@ -136,7 +136,7 @@ func (l ZerologLogger) Info(ctx context.Context, msg string) {
 	l.newEvent(ctx, zerolog.InfoLevel, nil).Msg(msg)
 }
 
-func (l ZerologLogger) InfoFields(ctx context.Context, msg string, fields map[string]any) {
+func (l ZerologLogger) InfoW(ctx context.Context, msg string, fields map[string]any) {
 	l.newEvent(ctx, zerolog.InfoLevel, fields).Msg(msg)
 }
 
@@ -144,7 +144,7 @@ func (l ZerologLogger) Warn(ctx context.Context, msg string) {
 	l.newEvent(ctx, zerolog.WarnLevel, nil).Msg(msg)
 }
 
-func (l ZerologLogger) WarnFields(ctx context.Context, msg string, fields map[string]any) {
+func (l ZerologLogger) WarnW(ctx context.Context, msg string, fields map[string]any) {
 	l.newEvent(ctx, zerolog.WarnLevel, fields).Msg(msg)
 }
 
@@ -152,7 +152,7 @@ func (l ZerologLogger) Error(ctx context.Context, err error, msg string) {
 	l.newEvent(ctx, zerolog.ErrorLevel, nil).Err(err).Msg(msg)
 }
 
-func (l ZerologLogger) ErrorFields(ctx context.Context, err error, msg string, fields map[string]any) {
+func (l ZerologLogger) ErrorW(ctx context.Context, err error, msg string, fields map[string]any) {
 	l.newEvent(ctx, zerolog.ErrorLevel, fields).Err(err).Msg(msg)
 }
 

@@ -23,9 +23,14 @@ type (
 		ExampleRepository example.Repository
 	}
 
-	// MessageEndpoints holds go-kit endpoints for each consumed message type.
-	// Each endpoint has the full middleware chain (timeout, rate-limit, logging).
-	MessageEndpoints struct {
-		CreateExample endpoint.Endpoint
+	// MessageHandler pairs a decode function with a go-kit endpoint.
+	// Decode converts the raw payload into the request type the endpoint expects.
+	MessageHandler struct {
+		Decode   func(payload []byte) (any, error)
+		Endpoint endpoint.Endpoint
 	}
+
+	// MessageRouter maps message type names to their handler.
+	// Used by the consumer to route incoming messages.
+	MessageRouter map[string]MessageHandler
 )

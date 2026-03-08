@@ -142,16 +142,16 @@ func TestLogWithFields(t *testing.T) {
 		contains string
 	}{
 		{
-			name: "InfoFields",
+			name: "InfoW",
 			log: func(lgr logger.ZerologLogger) {
-				lgr.InfoFields(context.Background(), "with fields", map[string]any{"key": "value"})
+				lgr.InfoW(context.Background(), "with fields", map[string]any{"key": "value"})
 			},
 			contains: "value",
 		},
 		{
-			name: "ErrorFields",
+			name: "ErrorW",
 			log: func(lgr logger.ZerologLogger) {
-				lgr.ErrorFields(context.Background(), errors.New("err"), "fields message", map[string]any{"trace": "abc"})
+				lgr.ErrorW(context.Background(), errors.New("err"), "fields message", map[string]any{"trace": "abc"})
 			},
 			contains: "abc",
 		},

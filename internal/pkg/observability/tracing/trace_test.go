@@ -5,13 +5,12 @@ import (
 	"errors"
 	"testing"
 
-	"go.opentelemetry.io/otel/attribute"
-	nooptrace "go.opentelemetry.io/otel/trace/noop"
-
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/tracing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
+	nooptrace "go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestSetup_Disabled(t *testing.T) {

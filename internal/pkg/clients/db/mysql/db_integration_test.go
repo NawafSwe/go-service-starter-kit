@@ -6,10 +6,9 @@ import (
 	"context"
 	"testing"
 
-	nooptrace "go.opentelemetry.io/otel/trace/noop"
-
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/clients/db/mysql"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/config"
+	nooptrace "go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestNewConn_UnreachableHost(t *testing.T) {

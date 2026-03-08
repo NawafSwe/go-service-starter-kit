@@ -4,11 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"google.golang.org/grpc"
-
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/observability/logger"
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/worker"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 )
 
 func TestNewGRPCWorker(t *testing.T) {

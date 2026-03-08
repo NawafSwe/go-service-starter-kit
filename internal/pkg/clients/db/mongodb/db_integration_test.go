@@ -7,9 +7,8 @@ import (
 	"testing"
 	"time"
 
-	nooptrace "go.opentelemetry.io/otel/trace/noop"
-
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/clients/db/mongodb"
+	nooptrace "go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestNewClient_UnreachableHost(t *testing.T) {

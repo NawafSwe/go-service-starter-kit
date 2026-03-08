@@ -8,9 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
-
 	"github.com/nawafswe/go-service-starter-kit/internal/pkg/worker"
+	"google.golang.org/grpc"
 )
 
 func TestGRPCWorker_Run_Shutdown(t *testing.T) {

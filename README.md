@@ -55,15 +55,19 @@ go-service-starter-kit/
 │   │   │       ├── mysql/    # OTel-traced MySQL pool (sqlx + go-sql-driver)
 │   │   │       └── mongodb/  # OTel-traced MongoDB client (mongo-driver)
 │   │   ├── config/           # Viper loader — YAML + .env + env vars
-│   │   ├── db/               # Pagination & safe SQL ordering helpers
-│   │   ├── gokit/http/       # go-kit HTTP handler factory
+│   │   ├── db/               # Database-agnostic pagination (Page, PageResult)
+│   │   │   └── sqlorder/     # SQL ORDER BY builder with column sanitisation
+│   │   ├── gokit/
+│   │   │   ├── http/         # go-kit HTTP handler factory
+│   │   │   ├── grpc/         # go-kit gRPC handler factory
+│   │   │   └── consumer/     # go-kit endpoint wrapper for message consumers
 │   │   ├── httpx/            # Resilient HTTP client (retry, circuit breaker, OTel)
 │   │   │   └── mock/         # MockDoer for unit tests
 │   │   ├── grpcx/            # Resilient gRPC client (retry, circuit breaker, OTel)
 │   │   │   └── mock/         # MockInvoker for unit tests
 │   │   ├── middleware/
 │   │   │   ├── http.go       # JWT HTTP middleware (AuthRequired / AuthOptional / AuthMock)
-│   │   │   ├── grpc.go       # JWT gRPC interceptors
+│   │   │   ├── grpc.go       # JWT gRPC interceptors + logging + tracing interceptors
 │   │   │   ├── gokit.go      # Timeout + sliding-window rate limiter
 │   │   │   ├── logging.go    # Transport-aware logging with sensitive-field masking
 │   │   │   └── consumer.go   # JWT consumer middleware (works with any message broker)
@@ -71,6 +75,7 @@ go-service-starter-kit/
 │   │   │   ├── logger/       # zerolog-backed structured, context-aware logger
 │   │   │   ├── tracing/      # OTel trace provider (OTLP gRPC exporter)
 │   │   │   └── metric/       # OTel metric Reporter
+│   │   ├── httperrors/       # Reusable HTTP error types (BadRequest, NotFound, Processing)
 │   │   ├── text/             # NonLoggable — redacts sensitive strings from logs and JSON
 │   │   └── worker/
 │   │       ├── http.go       # HTTP worker — graceful shutdown on SIGINT/SIGTERM
@@ -84,13 +89,14 @@ go-service-starter-kit/
 │       ├── repositories/     # Data access layer (sqlx + PostgreSQL)
 │       ├── endpoint/v1/      # go-kit endpoint adapters
 │       └── transport/
-│           ├── http/         # HTTP — server, DI bootstrap, encode/decode, error encoder
-│           ├── grpc/         # gRPC — server stub with logging + tracing interceptors
-│           └── consumer/     # Consumer — broker-agnostic stub with JWT auth wiring
+│           ├── http/         # HTTP — server, bootstrap, v1 encode/decode, JSON:API error encoder
+│           ├── grpc/         # gRPC — server, bootstrap, v1 handler + encode/decode via go-kit
+│           └── consumer/     # Consumer — bootstrap, v1 message decode, go-kit endpoint routing
 │
+├── api/                      # Proto module (github.com/nawafswe/go-service-starter-kit/api)
+│   └── proto/grpc/v1/        # proto3 definitions + generated Go stubs
 ├── db/migrations/            # SQL migration files (golang-migrate)
 ├── docs/
-│   ├── api/proto/            # proto3 service definitions + generated Go stubs
 │   ├── asyncapi/             # AsyncAPI 3.0 spec — event / message contracts
 │   ├── img/                  # Assets used in documentation
 │   └── openapi/              # OpenAPI 3.1 spec + oapi-codegen config

@@ -52,9 +52,9 @@ func loggingMiddleware(lgr logger.ZerologLogger) endpoint.Middleware {
 				lgr.Error(ctx, attErr, "failed to build log attributes")
 			}
 			if err == nil {
-				lgr.InfoFields(ctx, "processed successfully", attrs)
+				lgr.InfoW(ctx, "processed successfully", attrs)
 			} else {
-				lgr.ErrorFields(ctx, err, "processing failed", attrs)
+				lgr.ErrorW(ctx, err, "processing failed", attrs)
 			}
 			return response, err
 		}

@@ -2,7 +2,6 @@ package bootstrap
 
 import (
 	grpctransport "github.com/go-kit/kit/transport/grpc"
-
 	"github.com/nawafswe/go-service-starter-kit/internal/app/business/example"
 	ep "github.com/nawafswe/go-service-starter-kit/internal/app/endpoint/v1"
 	v1 "github.com/nawafswe/go-service-starter-kit/internal/app/transport/grpc/v1"

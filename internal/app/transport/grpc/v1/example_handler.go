@@ -4,7 +4,6 @@ import (
 	"context"
 
 	grpctransport "github.com/go-kit/kit/transport/grpc"
-
 	grpcv1 "github.com/nawafswe/go-service-starter-kit/api/proto/grpc/v1/gen"
 )
 
