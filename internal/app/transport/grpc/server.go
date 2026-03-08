@@ -5,7 +5,7 @@
 //  1. Define your .proto files under docs/api/proto/.
 //  2. Generate Go stubs:  protoc --go_out=. --go-grpc_out=. docs/proto/*.proto
 //  3. Register your generated service implementations in NewGRPCServer.
-//  4. The standard interceptor chain (auth, logging, tracing) is applied via pkg/middleware.
+//  4. The standard interceptor chain (auth, logging, tracing) is applied via middleware.
 //
 // Each RPC method is wired through go-kit endpoints with the same middleware
 // chain (timeout, rate-limit, logging) as the HTTP transport.
