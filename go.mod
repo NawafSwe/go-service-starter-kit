@@ -16,7 +16,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.11.2
-	github.com/nawafswe/go-service-starter-kit/api v1.0.0
+	github.com/nawafswe/go-service-starter-kit/api v1.0.1
 	github.com/nawafswe/mockchaos v1.0.0
 	github.com/rs/zerolog v1.34.0
 	github.com/sony/gobreaker v1.0.0

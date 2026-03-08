@@ -127,8 +127,8 @@ github.com/montanaflynn/stats v0.7.1 h1:etflOAAHORrCC44V+aR6Ftzort912ZU+YLiSTuV8
 github.com/montanaflynn/stats v0.7.1/go.mod h1:etXPPgVO6n31NxCd9KQUMvCM+ve0ruNzt6R8Bnaayow=
 github.com/morikuni/aec v1.0.0 h1:nP9CBfwrvYnBRgY6qfDQkygYDmYwOilePFkwzv4dU8A=
 github.com/morikuni/aec v1.0.0/go.mod h1:BbKIizmSmc5MMPqRYbxO4ZU0S0+P200+tUnFx7PXmsc=
-github.com/nawafswe/go-service-starter-kit/api v1.0.0 h1:OGXki3jcuLeYMldooNdM/GQw0eI5mJZKCm8sXw0hKwg=
-github.com/nawafswe/go-service-starter-kit/api v1.0.0/go.mod h1:fNg+yp3oHXFD6voNoxiw5cXEJP54ThvdSq9KY5CYeSQ=
+github.com/nawafswe/go-service-starter-kit/api v1.0.1 h1:CnbBn9zqCTmArGdSX6J6V7nyeDjRTPrVOI0eXF7LM0g=
+github.com/nawafswe/go-service-starter-kit/api v1.0.1/go.mod h1:/vVwXdU8BQ+Clld+21JhVUm3F9Z8za+UcB5Z7KGVPfE=
 github.com/nawafswe/mockchaos v1.0.0 h1:4jLmOXAVwT7rvHFPMFlp0X8DatcAlu707hyU/iLgfAY=
 github.com/nawafswe/mockchaos v1.0.0/go.mod h1:qt6RVpLfO890si74sNlXqF4r0MDscm3THn8jVjEb5n4=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
