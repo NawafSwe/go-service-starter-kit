@@ -84,6 +84,12 @@ test-integration: ## Run integration tests
 	@echo "Running integration tests..."
 	go test -tags integration -shuffle=on ./...
 
+test-load: ## Run a k6 load test: make test-load name=http_post_create_example
+	./scripts/k6.sh $(name)
+
+test-load-list: ## List available k6 load tests
+	./scripts/k6.sh
+
 fmt: ## Format code
 	gci write -s standard -s default . --skip-generated --skip-vendor && \
 	gofumpt -l -w .
@@ -116,5 +122,5 @@ generate-contracts: ## Regenerate HTTP API types from OpenAPI spec
 		--config docs/openapi/oapi-codegen.yaml docs/openapi/openapi.yaml
 
 .PHONY: help build build-docker run-http run-grpc run-consumer env clean \
-        migrate-up migrate-create lint test test-integration fmt generate \
+        migrate-up migrate-create lint test test-integration test-load test-load-list fmt generate \
         docker-start docker-stop docker-clean docker-restart generate-contracts

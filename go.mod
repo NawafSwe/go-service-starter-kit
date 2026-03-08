@@ -1,6 +1,6 @@
 module github.com/nawafswe/go-service-starter-kit
 
-go 1.24.4
+go 1.25.3
 
 tool go.uber.org/mock/mockgen
 
@@ -10,12 +10,14 @@ require (
 	github.com/go-kit/kit v0.13.0
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/jsonapi v1.0.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.7.4
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.11.2
 	github.com/nawafswe/go-service-starter-kit/api v1.0.0
+	github.com/nawafswe/mockchaos v1.0.0
 	github.com/rs/zerolog v1.34.0
 	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/viper v1.21.0
@@ -49,6 +51,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
