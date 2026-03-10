@@ -112,16 +112,20 @@ type RateLimiterCfg struct {
 	Limit    int64         `mapstructure:"LIMIT"`
 }
 
-// Load reads configuration from a YAML file and a .env file, merging them.
+// Load reads configuration from an optional YAML file and a .env file, merging them.
+// If configPath is empty, YAML loading is skipped and only .env + OS environment are used.
 // Priority: OS environment > .env file > YAML defaults.
 func Load(configPath, envPath string) (Config, error) {
 	const delimiter = "__"
 
 	base := viper.NewWithOptions(viper.KeyDelimiter(delimiter))
-	base.SetConfigType("yaml")
-	base.SetConfigFile(configPath)
-	if err := base.ReadInConfig(); err != nil {
-		return Config{}, fmt.Errorf("config: read yaml (%s): %w", configPath, err)
+
+	if configPath != "" {
+		base.SetConfigType("yaml")
+		base.SetConfigFile(configPath)
+		if err := base.ReadInConfig(); err != nil {
+			return Config{}, fmt.Errorf("config: read yaml (%s): %w", configPath, err)
+		}
 	}
 
 	envVpr := viper.NewWithOptions(viper.KeyDelimiter(delimiter))

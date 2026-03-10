@@ -68,14 +68,15 @@ const minimalEnv = "# test env\n"
 
 func TestLoad(t *testing.T) {
 	tests := []struct {
-		name        string
-		yaml        string
-		env         string
-		osEnv       map[string]string
-		skipYAML    bool
-		skipEnv     bool
-		expectedErr error
-		checkCfg    func(t *testing.T, cfg config.Config)
+		name         string
+		yaml         string
+		env          string
+		osEnv        map[string]string
+		skipYAML     bool
+		yamlPathFunc func(dir string) string
+		skipEnv      bool
+		expectedErr  error
+		checkCfg     func(t *testing.T, cfg config.Config)
 	}{
 		{
 			name: "valid config",
@@ -105,11 +106,20 @@ func TestLoad(t *testing.T) {
 			},
 		},
 		{
-			name:        "missing YAML file",
-			yaml:        validYAML,
-			env:         minimalEnv,
-			skipYAML:    true,
-			expectedErr: errors.New("config: read yaml"),
+			name:         "invalid YAML path",
+			env:          minimalEnv,
+			yamlPathFunc: func(dir string) string { return filepath.Join(dir, "nonexistent.yaml") },
+			expectedErr:  errors.New("config: read yaml"),
+		},
+		{
+			name:     "env only without YAML",
+			env:      "JWT__SECRET=env-secret\nDB__DSN=postgres://localhost/testdb\nHTTP__PORT=9090\n",
+			skipYAML: true,
+			checkCfg: func(t *testing.T, cfg config.Config) {
+				assert.Equal(t, "env-secret", cfg.JWT.Secret)
+				assert.Equal(t, "postgres://localhost/testdb", cfg.DB.DSN)
+				assert.Equal(t, 9090, cfg.HTTP.Port)
+			},
 		},
 		{
 			name:        "missing env file",
@@ -123,8 +133,11 @@ func TestLoad(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()
 
-			yamlPath := filepath.Join(dir, "nonexistent.yaml")
-			if !tc.skipYAML {
+			var yamlPath string
+			switch {
+			case tc.yamlPathFunc != nil:
+				yamlPath = tc.yamlPathFunc(dir)
+			case !tc.skipYAML:
 				yamlPath = writeFile(t, dir, "config.yaml", tc.yaml)
 			}
 
